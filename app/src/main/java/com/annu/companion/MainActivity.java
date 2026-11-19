@@ -34,10 +34,6 @@ public class MainActivity extends Activity {
     private TextToSpeech tts;
     private WebView character;
     private WebViewAssetLoader assetLoader;
-    private final android.content.SharedPreferences prefs;
-
-    public MainActivity(){ prefs=null; }
-
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
         getWindow().setStatusBarColor(Color.rgb(35,22,57));getWindow().setNavigationBarColor(Color.rgb(35,22,57));
