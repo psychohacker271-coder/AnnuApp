@@ -53,7 +53,7 @@ public class FloatingService extends Service {
             public boolean onTouch(View view, MotionEvent e) {
                 if (e.getAction() == MotionEvent.ACTION_DOWN) { sx=p.x; sy=p.y; tx=e.getRawX(); ty=e.getRawY(); return true; }
                 if (e.getAction() == MotionEvent.ACTION_MOVE) { p.x=sx+(int)(e.getRawX()-tx); p.y=sy+(int)(e.getRawY()-ty); wm.updateViewLayout(v,p); return true; }
-                if (e.getAction() == MotionEvent.ACTION_UP) { if (Math.abs(e.getRawX()-tx)<12 && Math.abs(e.getRawY()-ty)<12) { v.setText("💜\nANNU\nHi! Boss ✨"); } return true; }
+                if (e.getAction() == MotionEvent.ACTION_UP) { if (Math.abs(e.getRawX()-tx)<12 && Math.abs(e.getRawY()-ty)<12) { Intent open = new Intent(FloatingService.this, MainActivity.class); open.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); startActivity(open); } return true; }
                 return true;
             }
         });
