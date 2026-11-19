@@ -4,10 +4,14 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
     <application android:allowBackup="false" android:label="ANNU" android:theme="@android:style/Theme.Material.Light.NoActionBar" android:usesCleartextTraffic="false" android:hardwareAccelerated="true">
         <activity android:name=".MainActivity" android:exported="true">
             <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
         </activity>
+        <receiver android:name=".CallAlertReceiver" android:enabled="true" android:exported="true" android:permission="android.permission.READ_PHONE_STATE">
+            <intent-filter><action android:name="android.intent.action.PHONE_STATE"/></intent-filter>
+        </receiver>
         <service android:name=".FloatingService" android:exported="false" android:foregroundServiceType="specialUse">
             <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="User-started floating 3D anime companion overlay"/>
         </service>
