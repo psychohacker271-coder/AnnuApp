@@ -15,9 +15,13 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
+      - name: Package the existing VRoid model
+        run: |
+          mkdir -p app/src/main/assets
+          cp 4728432443254068622_v001.vrm app/src/main/assets/annu.vrm
       - name: Build debug APK
         run: gradle assembleDebug
       - uses: actions/upload-artifact@v4
         with:
-          name: ANNU-debug-apk
+          name: ANNU-3D-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
