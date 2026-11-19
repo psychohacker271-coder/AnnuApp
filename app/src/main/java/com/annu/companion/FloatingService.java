@@ -23,6 +23,7 @@ import androidx.webkit.WebViewAssetLoader;
 public class FloatingService extends Service {
     private static final String CHANNEL="annu_companion";
     private WindowManager wm;private WebView avatar;private WebViewAssetLoader assetLoader;
+    private WindowManager.LayoutParams params;
     @Override public void onCreate(){super.onCreate();createChannel();startForeground(41,makeNotification());if(Settings.canDrawOverlays(this))showAvatar();else stopSelf();}
     private void createChannel(){if(Build.VERSION.SDK_INT>=26){NotificationChannel c=new NotificationChannel(CHANNEL,"ANNU companion",NotificationManager.IMPORTANCE_LOW);getSystemService(NotificationManager.class).createNotificationChannel(c);}}
     private Notification makeNotification(){
@@ -38,15 +39,16 @@ public class FloatingService extends Service {
         avatar.setWebViewClient(new WebViewClient(){@Override public android.webkit.WebResourceResponse shouldInterceptRequest(WebView view,android.webkit.WebResourceRequest request){return assetLoader.shouldInterceptRequest(request.getUrl());}});
         avatar.setWebChromeClient(new WebChromeClient());avatar.setBackgroundColor(android.graphics.Color.TRANSPARENT);avatar.setLayerType(View.LAYER_TYPE_HARDWARE,null);
         int type=Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE;
-        WindowManager.LayoutParams p=new WindowManager.LayoutParams(190,245,type,WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,PixelFormat.TRANSLUCENT);
-        p.gravity=Gravity.TOP|Gravity.START;p.x=12;p.y=180;
+        params=new WindowManager.LayoutParams(190,245,type,WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,PixelFormat.TRANSLUCENT);
+        params.gravity=Gravity.TOP|Gravity.START;params.x=12;params.y=180;
         avatar.setOnTouchListener(new View.OnTouchListener(){int sx,sy;float tx,ty;public boolean onTouch(View v,MotionEvent e){
-            if(e.getAction()==MotionEvent.ACTION_DOWN){sx=p.x;sy=p.y;tx=e.getRawX();ty=e.getRawY();return true;}
-            if(e.getAction()==MotionEvent.ACTION_MOVE){p.x=sx+(int)(e.getRawX()-tx);p.y=sy+(int)(e.getRawY()-ty);try{wm.updateViewLayout(avatar,p);}catch(Exception ignored){}return true;}
+            if(e.getAction()==MotionEvent.ACTION_DOWN){sx=params.x;sy=params.y;tx=e.getRawX();ty=e.getRawY();return true;}
+            if(e.getAction()==MotionEvent.ACTION_MOVE){params.x=sx+(int)(e.getRawX()-tx);params.y=sy+(int)(e.getRawY()-ty);try{wm.updateViewLayout(avatar,params);}catch(Exception ignored){}return true;}
             if(e.getAction()==MotionEvent.ACTION_UP){if(Math.abs(e.getRawX()-tx)<12&&Math.abs(e.getRawY()-ty)<12){Intent i=new Intent(FloatingService.this,MainActivity.class);i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);startActivity(i);}return true;}return true;}});
-        wm.addView(avatar,p);avatar.loadUrl("https://appassets.androidplatform.net/assets/annu.html?overlay=1");
+        wm.addView(avatar,params);avatar.loadUrl("https://appassets.androidplatform.net/assets/annu.html?overlay=1");
     }
-    @Override public int onStartCommand(Intent intent,int flags,int startId){if(intent!=null&&"STOP".equals(intent.getAction()))stopSelf();return START_STICKY;}
+    private void setAvatarVisible(boolean visible){if(avatar==null||params==null)return;try{params.width=visible?190:0;params.height=visible?245:0;wm.updateViewLayout(avatar,params);}catch(Exception ignored){}}
+    @Override public int onStartCommand(Intent intent,int flags,int startId){if(intent!=null){String action=intent.getAction();if("STOP".equals(action)){stopSelf();return START_NOT_STICKY;}if("HIDE".equals(action)){setAvatarVisible(false);}if("SHOW".equals(action)){setAvatarVisible(true);}}return START_STICKY;}
     @Override public void onDestroy(){if(wm!=null&&avatar!=null)try{wm.removeView(avatar);}catch(Exception ignored){}if(avatar!=null)avatar.destroy();super.onDestroy();}
     @Override public IBinder onBind(Intent intent){return null;}
 }
