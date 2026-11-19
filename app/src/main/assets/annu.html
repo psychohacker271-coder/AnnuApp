@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}canvas{display:block;width:100%;height:100%;touch-action:none}#msg{position:absolute;left:0;right:0;bottom:8px;text-align:center;color:#fff;font:12px sans-serif;text-shadow:0 1px 4px #000;pointer-events:none}</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/","@pixiv/three-vrm":"https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@3.0.0/lib/three-vrm.module.min.js"}}</script>
+</head><body><div id="msg">ANNU 💜</div><script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { VRMLoaderPlugin, VRMUtils } from '@pixiv/three-vrm';
+const overlay=new URLSearchParams(location.search).get('overlay')==='1';
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(28,innerWidth/innerHeight,0.1,100);
+camera.position.set(0,1.35,3.2);
+const renderer=new THREE.WebGLRenderer({alpha:true,antialias:true,powerPreference:'low-power'});
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.setSize(innerWidth,innerHeight);renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.setClearColor(0x000000,0);document.body.appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xffffff,0x665577,2));
+const key=new THREE.DirectionalLight(0xffffff,2);key.position.set(1,2,3);scene.add(key);
+let vrm=null;
+const msg=document.getElementById('msg');
+const loader=new GLTFLoader();loader.register(p=>new VRMLoaderPlugin(p));
+loader.load('./annu.vrm',gltf=>{
+ vrm=gltf.userData.vrm;VRMUtils.rotateVRM0(vrm);scene.add(vrm.scene);
+ const box=new THREE.Box3().setFromObject(vrm.scene);const size=box.getSize(new THREE.Vector3());const center=box.getCenter(new THREE.Vector3());
+ vrm.scene.position.x-=center.x;vrm.scene.position.y-=box.min.y;
+ const height=Math.max(size.y,1.2);camera.position.set(0,height*0.58,height*2.7);camera.lookAt(0,height*0.48,0);
+ msg.textContent='Ji Boss! Main yahan hoon 💜';
+},undefined,error=>{console.error(error);msg.textContent='Model load nahi hua. Internet check karein.'});
+function resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)}
+addEventListener('resize',resize);
+const clock=new THREE.Clock();
+function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05);if(vrm){vrm.update(dt);vrm.scene.rotation.y=Math.sin(performance.now()*.0005)*.08;}renderer.render(scene,camera)}
+animate();
+</script></body></html>
