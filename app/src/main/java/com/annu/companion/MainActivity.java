@@ -12,13 +12,16 @@ import android.speech.RecognizerIntent;
 import android.speech.tts.TextToSpeech;
 import android.view.Gravity;
 import android.view.View;
+import android.webkit.ConsoleMessage;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.graphics.Color;
+import androidx.webkit.WebViewAssetLoader;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -29,32 +32,34 @@ public class MainActivity extends Activity {
     private TextView status;
     private TextToSpeech tts;
     private WebView character;
+    private WebViewAssetLoader assetLoader;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
         getWindow().setStatusBarColor(Color.rgb(35,22,57));
         getWindow().setNavigationBarColor(Color.rgb(35,22,57));
+        assetLoader=new WebViewAssetLoader.Builder().addPathHandler("/assets/",new WebViewAssetLoader.AssetsPathHandler(this)).build();
         tts=new TextToSpeech(this,r->{if(r==TextToSpeech.SUCCESS){tts.setLanguage(new Locale("hi","IN"));tts.setSpeechRate(0.94f);}});
-        LinearLayout root=new LinearLayout(this);
-        root.setOrientation(LinearLayout.VERTICAL);root.setBackgroundColor(Color.rgb(35,22,57));
+        LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setBackgroundColor(Color.rgb(35,22,57));
         character=new WebView(this);setupWebView(character);character.setBackgroundColor(Color.TRANSPARENT);
         root.addView(character,new LinearLayout.LayoutParams(-1,0,1));
-        TextView title=new TextView(this);title.setText("ANNU  💜");title.setTextColor(Color.WHITE);title.setTextSize(25);title.setGravity(Gravity.CENTER);title.setPadding(8,6,8,4);
-        root.addView(title);
+        TextView title=new TextView(this);title.setText("ANNU  💜");title.setTextColor(Color.WHITE);title.setTextSize(25);title.setGravity(Gravity.CENTER);title.setPadding(8,6,8,4);root.addView(title);
         status=new TextView(this);status.setText("Ji Boss! Main yahan hoon.");status.setTextColor(Color.WHITE);status.setTextSize(15);status.setGravity(Gravity.CENTER);status.setPadding(8,4,8,8);root.addView(status);
         Button start=new Button(this);start.setText("FLOAT ANNU ON SCREEN");start.setOnClickListener(v->startAnnu());root.addView(start);
         Button speak=new Button(this);speak.setText("🎙  TALK TO ANNU");speak.setOnClickListener(v->listen());root.addView(speak);
         Button stop=new Button(this);stop.setText("STOP FLOATING ANNU");stop.setOnClickListener(v->stopService(new Intent(this,FloatingService.class)));root.addView(stop);
         setContentView(root);
-        character.loadUrl("file:///android_asset/annu.html");
+        character.loadUrl("https://appassets.androidplatform.net/assets/annu.html");
     }
     private void setupWebView(WebView w){
-        WebSettings s=w.getSettings();s.setJavaScriptEnabled(true);s.setDomStorageEnabled(true);s.setAllowFileAccess(true);s.setLoadsImagesAutomatically(true);
-        w.setWebChromeClient(new WebChromeClient());w.setLayerType(View.LAYER_TYPE_HARDWARE,null);
+        WebSettings s=w.getSettings();s.setJavaScriptEnabled(true);s.setDomStorageEnabled(true);s.setLoadsImagesAutomatically(true);
+        w.setWebViewClient(new WebViewClient(){@Override public android.webkit.WebResourceResponse shouldInterceptRequest(WebView view,android.webkit.WebResourceRequest request){return assetLoader.shouldInterceptRequest(request.getUrl());}});
+        w.setWebChromeClient(new WebChromeClient(){@Override public boolean onConsoleMessage(ConsoleMessage m){android.util.Log.d("ANNU-Web",m.message());return true;}});
+        w.setLayerType(View.LAYER_TYPE_HARDWARE,null);
     }
     private void startAnnu(){
         if(!Settings.canDrawOverlays(this)){startActivityForResult(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,Uri.parse("package:"+getPackageName())),OVERLAY_REQUEST);return;}
-        if(Build.VERSION.SDK_INT>=33&&checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED)requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},702);
+        if(Build.VERSION.SDK_INT>=33&&checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED){requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},702);return;}
         Intent service=new Intent(this,FloatingService.class);if(Build.VERSION.SDK_INT>=26)startForegroundService(service);else startService(service);
         say("Ji Boss! Main screen par aa gayi hoon.");
     }
@@ -65,7 +70,7 @@ public class MainActivity extends Activity {
     @Override protected void onActivityResult(int req,int result,Intent data){
         super.onActivityResult(req,result,data);
         if(req==OVERLAY_REQUEST&&Settings.canDrawOverlays(this))startAnnu();
-        if(req==SPEECH_REQUEST&&result==RESULT_OK&&data!=null){ArrayList<String> a=data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);if(a!=null&&!a.isEmpty())handleCommand(a.get(0).toLowerCase(Locale.ROOT));}
+        if(req==SPEECH_REQUEST&&result==RESULT_OK&&data!=null){ArrayList<String>a=data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);if(a!=null&&!a.isEmpty())handleCommand(a.get(0).toLowerCase(Locale.ROOT));}
     }
     private void handleCommand(String c){
         if(c.contains("youtube")){launch("com.google.android.youtube","YouTube khol rahi hoon.");return;}
