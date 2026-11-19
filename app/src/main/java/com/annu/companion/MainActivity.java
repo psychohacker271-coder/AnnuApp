@@ -31,6 +31,7 @@ import java.util.Locale;
 public class MainActivity extends Activity {
     private static final int OVERLAY_REQUEST=701, SPEECH_REQUEST=703, PERMISSION_REQUEST=704, VRM_PICK=705, AUDIO_PICK=706;
     private TextView status, assetStatus;
+    private android.content.SharedPreferences appPrefs;
     private TextToSpeech tts;
     private WebView character;
     private WebViewAssetLoader assetLoader;
@@ -50,7 +51,7 @@ public class MainActivity extends Activity {
         Button speak=new Button(this);speak.setText("🎙  TALK TO ANNU");speak.setOnClickListener(v->listen());root.addView(speak);
         Button vrm=new Button(this);vrm.setText("IMPORT / CHANGE VRM MODEL");vrm.setOnClickListener(v->pickVrm());root.addView(vrm);
         Button audio=new Button(this);audio.setText("IMPORT VOICE / AUDIO FILE");audio.setOnClickListener(v->pickAudio());root.addView(audio);
-        Button stop=new Button(this);stop.setText("STOP FLOATING ANNU");stop.setOnClickListener(v->stopService(new Intent(this,FloatingService.class)));root.addView(stop);
+        Button stop=new Button(this);stop.setText("STOP FLOATING ANNU");stop.setOnClickListener(v->{appPrefs.edit().putBoolean("floating_enabled",false).apply();stopService(new Intent(this,FloatingService.class));});root.addView(stop);
         setContentView(root);
         character.loadUrl("https://appassets.androidplatform.net/assets/annu.html");
         if(getIntent().getBooleanExtra("annu_incoming_call",false)){say("Boss, aapko call aa rahi hai. Kya aap baat karna chahenge?");getIntent().removeExtra("annu_incoming_call");}
@@ -68,7 +69,7 @@ public class MainActivity extends Activity {
         if(!Settings.canDrawOverlays(this)){startActivityForResult(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,Uri.parse("package:"+getPackageName())),OVERLAY_REQUEST);return;}
         if(Build.VERSION.SDK_INT>=33&&checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED){requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},PERMISSION_REQUEST);return;}
         if(checkSelfPermission(Manifest.permission.READ_PHONE_STATE)!=PackageManager.PERMISSION_GRANTED){requestPermissions(new String[]{Manifest.permission.READ_PHONE_STATE},PERMISSION_REQUEST);return;}
-        Intent service=new Intent(this,FloatingService.class);if(Build.VERSION.SDK_INT>=26)startForegroundService(service);else startService(service);say("Ji Boss! Floating mode shuru kar diya hai.");
+        appPrefs.edit().putBoolean("floating_enabled",true).apply();Intent service=new Intent(this,FloatingService.class);if(Build.VERSION.SDK_INT>=26)startForegroundService(service);else startService(service);say("Ji Boss! Floating mode shuru kar diya hai.");
     }
     private void listen(){Intent i=new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);i.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);i.putExtra(RecognizerIntent.EXTRA_LANGUAGE,"hi-IN");i.putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE,"hi-IN");i.putExtra(RecognizerIntent.EXTRA_PROMPT,"ANNU sun rahi hai...");try{startActivityForResult(i,SPEECH_REQUEST);}catch(Exception e){say("Voice recognition abhi available nahi hai.");}}
     @Override protected void onActivityResult(int req,int result,Intent data){super.onActivityResult(req,result,data);
@@ -93,7 +94,7 @@ public class MainActivity extends Activity {
     }
     private void launch(String pkg,String response){Intent i=getPackageManager().getLaunchIntentForPackage(pkg);if(i==null){say("Boss, ye app phone mein nahi mili.");return;}say(response);startActivity(i);}
     private void say(String m){if(status!=null)status.setText(m);if(tts!=null)tts.speak(m,TextToSpeech.QUEUE_FLUSH,null,"annu_reply");}
-    @Override protected void onResume(){super.onResume();try{startService(new Intent(this,FloatingService.class).setAction("HIDE"));}catch(Exception ignored){}}
-    @Override protected void onPause(){try{startService(new Intent(this,FloatingService.class).setAction("SHOW"));}catch(Exception ignored){}super.onPause();}
+    @Override protected void onResume(){super.onResume();if(appPrefs!=null&&appPrefs.getBoolean("floating_enabled",false))try{startService(new Intent(this,FloatingService.class).setAction("HIDE"));}catch(Exception ignored){}}
+    @Override protected void onPause(){if(appPrefs!=null&&appPrefs.getBoolean("floating_enabled",false))try{startService(new Intent(this,FloatingService.class).setAction("SHOW"));}catch(Exception ignored){}super.onPause();}
     @Override protected void onDestroy(){if(character!=null)character.destroy();if(tts!=null){tts.stop();tts.shutdown();}super.onDestroy();}
 }
