@@ -28,21 +28,18 @@ import java.util.Date;
 import java.util.Locale;
 
 public class MainActivity extends Activity {
-    private static final int OVERLAY_REQUEST=701, SPEECH_REQUEST=703;
+    private static final int OVERLAY_REQUEST=701, SPEECH_REQUEST=703, PERMISSION_REQUEST=704;
     private TextView status;
     private TextToSpeech tts;
     private WebView character;
     private WebViewAssetLoader assetLoader;
-
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
-        getWindow().setStatusBarColor(Color.rgb(35,22,57));
-        getWindow().setNavigationBarColor(Color.rgb(35,22,57));
+        getWindow().setStatusBarColor(Color.rgb(35,22,57));getWindow().setNavigationBarColor(Color.rgb(35,22,57));
         assetLoader=new WebViewAssetLoader.Builder().addPathHandler("/assets/",new WebViewAssetLoader.AssetsPathHandler(this)).build();
         tts=new TextToSpeech(this,r->{if(r==TextToSpeech.SUCCESS){tts.setLanguage(new Locale("hi","IN"));tts.setSpeechRate(0.94f);}});
         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setBackgroundColor(Color.rgb(35,22,57));
-        character=new WebView(this);setupWebView(character);character.setBackgroundColor(Color.TRANSPARENT);
-        root.addView(character,new LinearLayout.LayoutParams(-1,0,1));
+        character=new WebView(this);setupWebView(character);character.setBackgroundColor(Color.TRANSPARENT);root.addView(character,new LinearLayout.LayoutParams(-1,0,1));
         TextView title=new TextView(this);title.setText("ANNU  💜");title.setTextColor(Color.WHITE);title.setTextSize(25);title.setGravity(Gravity.CENTER);title.setPadding(8,6,8,4);root.addView(title);
         status=new TextView(this);status.setText("Ji Boss! Main yahan hoon.");status.setTextColor(Color.WHITE);status.setTextSize(15);status.setGravity(Gravity.CENTER);status.setPadding(8,4,8,8);root.addView(status);
         Button start=new Button(this);start.setText("FLOAT ANNU ON SCREEN");start.setOnClickListener(v->startAnnu());root.addView(start);
@@ -50,37 +47,21 @@ public class MainActivity extends Activity {
         Button stop=new Button(this);stop.setText("STOP FLOATING ANNU");stop.setOnClickListener(v->stopService(new Intent(this,FloatingService.class)));root.addView(stop);
         setContentView(root);
         character.loadUrl("https://appassets.androidplatform.net/assets/annu.html");
+        if(getIntent().getBooleanExtra("annu_incoming_call",false)){status.setText("Boss, aapko call aa rahi hai. Kya aap baat karna chahenge?");say("Boss, aapko call aa rahi hai. Kya aap baat karna chahenge?");getIntent().removeExtra("annu_incoming_call");}
     }
-    private void setupWebView(WebView w){
-        WebSettings s=w.getSettings();s.setJavaScriptEnabled(true);s.setDomStorageEnabled(true);s.setLoadsImagesAutomatically(true);
-        w.setWebViewClient(new WebViewClient(){@Override public android.webkit.WebResourceResponse shouldInterceptRequest(WebView view,android.webkit.WebResourceRequest request){return assetLoader.shouldInterceptRequest(request.getUrl());}});
-        w.setWebChromeClient(new WebChromeClient(){@Override public boolean onConsoleMessage(ConsoleMessage m){android.util.Log.d("ANNU-Web",m.message());return true;}});
-        w.setLayerType(View.LAYER_TYPE_HARDWARE,null);
-    }
+    private void setupWebView(WebView w){WebSettings s=w.getSettings();s.setJavaScriptEnabled(true);s.setDomStorageEnabled(true);s.setLoadsImagesAutomatically(true);w.setWebViewClient(new WebViewClient(){@Override public android.webkit.WebResourceResponse shouldInterceptRequest(WebView view,android.webkit.WebResourceRequest request){return assetLoader.shouldInterceptRequest(request.getUrl());}});w.setWebChromeClient(new WebChromeClient(){@Override public boolean onConsoleMessage(ConsoleMessage m){android.util.Log.d("ANNU-Web",m.message());return true;}});w.setLayerType(View.LAYER_TYPE_HARDWARE,null);}
     private void startAnnu(){
         if(!Settings.canDrawOverlays(this)){startActivityForResult(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,Uri.parse("package:"+getPackageName())),OVERLAY_REQUEST);return;}
-        if(Build.VERSION.SDK_INT>=33&&checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED){requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},702);return;}
+        if(Build.VERSION.SDK_INT>=33&&checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED){requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},PERMISSION_REQUEST);return;}
+        if(checkSelfPermission(Manifest.permission.READ_PHONE_STATE)!=PackageManager.PERMISSION_GRANTED){requestPermissions(new String[]{Manifest.permission.READ_PHONE_STATE},PERMISSION_REQUEST);return;}
         Intent service=new Intent(this,FloatingService.class);if(Build.VERSION.SDK_INT>=26)startForegroundService(service);else startService(service);
-        say("Ji Boss! Main screen par aa gayi hoon.");
+        say("Ji Boss! Main screen par aa gayi hoon. Incoming call alerts bhi ready hain.");
     }
-    private void listen(){
-        Intent i=new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);i.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);i.putExtra(RecognizerIntent.EXTRA_LANGUAGE,"hi-IN");i.putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE,"hi-IN");i.putExtra(RecognizerIntent.EXTRA_PROMPT,"ANNU sun rahi hai...");
-        try{startActivityForResult(i,SPEECH_REQUEST);}catch(Exception e){say("Voice recognition abhi available nahi hai.");}
-    }
-    @Override protected void onActivityResult(int req,int result,Intent data){
-        super.onActivityResult(req,result,data);
-        if(req==OVERLAY_REQUEST&&Settings.canDrawOverlays(this))startAnnu();
-        if(req==SPEECH_REQUEST&&result==RESULT_OK&&data!=null){ArrayList<String>a=data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);if(a!=null&&!a.isEmpty())handleCommand(a.get(0).toLowerCase(Locale.ROOT));}
-    }
-    private void handleCommand(String c){
-        if(c.contains("youtube")){launch("com.google.android.youtube","YouTube khol rahi hoon.");return;}
-        if(c.contains("chrome")){launch("com.android.chrome","Chrome khol rahi hoon.");return;}
-        if(c.contains("time")||c.contains("समय")||c.contains("kitne baje")){say("Boss, abhi "+new SimpleDateFormat("h:mm a",Locale.getDefault()).format(new Date())+" ho rahe hain.");return;}
-        if(c.contains("hello")||c.contains("hi")||c.contains("namaste")||c.contains("नमस्ते")||c.contains("annu")){say("Ji Boss! Main yahan hoon. Bataiye kya karna hai?");return;}
-        if(c.contains("stop")||c.contains("band ho ja")){stopService(new Intent(this,FloatingService.class));say("Theek hai Boss, floating mode band kar rahi hoon.");return;}
-        say("Boss, ye command abhi mere basic version mein nahi hai.");
-    }
+    private void listen(){Intent i=new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);i.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);i.putExtra(RecognizerIntent.EXTRA_LANGUAGE,"hi-IN");i.putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE,"hi-IN");i.putExtra(RecognizerIntent.EXTRA_PROMPT,"ANNU sun rahi hai...");try{startActivityForResult(i,SPEECH_REQUEST);}catch(Exception e){say("Voice recognition abhi available nahi hai.");}}
+    @Override protected void onActivityResult(int req,int result,Intent data){super.onActivityResult(req,result,data);if(req==OVERLAY_REQUEST&&Settings.canDrawOverlays(this))startAnnu();if(req==SPEECH_REQUEST&&result==RESULT_OK&&data!=null){ArrayList<String>a=data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);if(a!=null&&!a.isEmpty())handleCommand(a.get(0).toLowerCase(Locale.ROOT));}}
+    @Override public void onRequestPermissionsResult(int request,String[] permissions,int[] results){super.onRequestPermissionsResult(request,permissions,results);if(request==PERMISSION_REQUEST){boolean ok=true;for(int r:results)if(r!=PackageManager.PERMISSION_GRANTED)ok=false;if(ok)startAnnu();else say("Boss, call alert ke liye permission allow karni hogi.");}}
+    private void handleCommand(String c){if(c.contains("youtube")){launch("com.google.android.youtube","YouTube khol rahi hoon.");return;}if(c.contains("chrome")){launch("com.android.chrome","Chrome khol rahi hoon.");return;}if(c.contains("time")||c.contains("समय")||c.contains("kitne baje")){say("Boss, abhi "+new SimpleDateFormat("h:mm a",Locale.getDefault()).format(new Date())+" ho rahe hain.");return;}if(c.contains("hello")||c.contains("hi")||c.contains("namaste")||c.contains("नमस्ते")||c.contains("annu")){say("Ji Boss! Main yahan hoon. Bataiye kya karna hai?");return;}if(c.contains("stop")||c.contains("band ho ja")){stopService(new Intent(this,FloatingService.class));say("Theek hai Boss, floating mode band kar rahi hoon.");return;}say("Boss, ye command abhi mere basic version mein nahi hai.");}
     private void launch(String pkg,String response){Intent i=getPackageManager().getLaunchIntentForPackage(pkg);if(i==null){say("Boss, ye app phone mein nahi mili.");return;}say(response);startActivity(i);}
-    private void say(String m){status.setText(m);if(tts!=null)tts.speak(m,TextToSpeech.QUEUE_FLUSH,null,"annu_reply");}
+    private void say(String m){if(status!=null)status.setText(m);if(tts!=null)tts.speak(m,TextToSpeech.QUEUE_FLUSH,null,"annu_reply");}
     @Override protected void onDestroy(){if(character!=null)character.destroy();if(tts!=null){tts.stop();tts.shutdown();}super.onDestroy();}
 }
