@@ -5,16 +5,16 @@
 </head><body><div id="msg">ANNU 💜 — 3D load ho raha hai…</div><script type="module">
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { VRMLoaderPlugin, VRMUtils } from '@pixiv/three-vrm';
+import { VRMLoaderPlugin } from '@pixiv/three-vrm';
 const msg=document.getElementById('msg');
 const fail=e=>{console.error(e);msg.textContent='3D error: '+(e?.message||String(e)).slice(0,90)};
 window.addEventListener('error',e=>fail(e.message||'JavaScript error'));
 window.addEventListener('unhandledrejection',e=>fail(e.reason));
 try{
  const scene=new THREE.Scene();
- const camera=new THREE.PerspectiveCamera(30,innerWidth/innerHeight,.1,100);
+ const camera=new THREE.PerspectiveCamera(32,innerWidth/innerHeight,.05,100);
  const renderer=new THREE.WebGLRenderer({alpha:true,antialias:true,powerPreference:'low-power'});
- renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.setSize(innerWidth,innerHeight);
+ renderer.setPixelRatio(Math.min(devicePixelRatio,1.25));renderer.setSize(innerWidth,innerHeight);
  renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.setClearColor(0x000000,0);
  document.body.appendChild(renderer.domElement);
  scene.add(new THREE.HemisphereLight(0xffffff,0x665577,2));
@@ -25,18 +25,21 @@ try{
  loader.load('annu.vrm',gltf=>{
    vrm=gltf.userData.vrm;
    if(!vrm){fail('VRM plugin model ko nahi pehchan paaya');return;}
-   VRMUtils.rotateVRM0(vrm);scene.add(vrm.scene);
+   // Keep the model's source orientation; the old extra VRM0 rotation showed its back.
+   scene.add(vrm.scene);
    const box=new THREE.Box3().setFromObject(vrm.scene);
    const size=box.getSize(new THREE.Vector3());const center=box.getCenter(new THREE.Vector3());
-   vrm.scene.position.x-=center.x;vrm.scene.position.y-=box.min.y;
-   const h=Math.max(size.y,1.2);camera.position.set(0,h*.58,h*2.7);camera.lookAt(0,h*.48,0);
+   vrm.scene.position.x-=center.x;vrm.scene.position.y-=box.min.y;vrm.scene.position.z-=center.z;
+   const h=Math.max(size.y,1.2);
+   const distance=(h*.5)/Math.tan(THREE.MathUtils.degToRad(camera.fov*.5))*1.18;
+   camera.position.set(0,h*.53,distance);camera.lookAt(0,h*.48,0);
    vrm.scene.traverse(o=>{o.frustumCulled=false});
    msg.textContent='Ji Boss! Main yahan hoon 💜';
  },p=>{if(p.total)msg.textContent='Model '+Math.round(p.loaded/p.total*100)+'%…'},fail);
  function resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)}
  addEventListener('resize',resize);
  const clock=new THREE.Clock();
- function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05);if(vrm){vrm.update(dt);vrm.scene.rotation.y=Math.sin(performance.now()*.0005)*.07;}renderer.render(scene,camera)}
+ function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05);if(vrm){vrm.update(dt);vrm.scene.rotation.y=Math.sin(performance.now()*.0005)*.035;}renderer.render(scene,camera)}
  animate();
 }catch(e){fail(e)}
 </script></body></html>
