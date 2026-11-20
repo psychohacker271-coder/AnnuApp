@@ -57,6 +57,7 @@ public class MainActivity extends Activity {
         Button language=new Button(this);language.setText(appPrefs.getString("speech_language","hi-IN").equals("hi-IN")?"VOICE LANGUAGE: HINDI":"VOICE LANGUAGE: ENGLISH");language.setOnClickListener(v->{String next=appPrefs.getString("speech_language","hi-IN").equals("hi-IN")?"en-IN":"hi-IN";appPrefs.edit().putString("speech_language",next).apply();if(tts!=null)tts.setLanguage(next.equals("hi-IN")?new Locale("hi","IN"):new Locale("en","IN"));language.setText(next.equals("hi-IN")?"VOICE LANGUAGE: HINDI":"VOICE LANGUAGE: ENGLISH");say(next.equals("hi-IN")?"Hindi voice select ho gayi.":"English voice selected.");});root.addView(language);
         Button vrm=new Button(this);vrm.setText("IMPORT / CHANGE VRM MODEL");vrm.setOnClickListener(v->pickVrm());root.addView(vrm);
         Button audio=new Button(this);audio.setText("IMPORT VOICE / AUDIO FILE");audio.setOnClickListener(v->pickAudio());root.addView(audio);
+        Button brain=new Button(this);brain.setText("CONNECT FREE LOCAL AI (OLLAMA)");brain.setOnClickListener(v->configureBrain());root.addView(brain);
         Button calls=new Button(this);calls.setText("ENABLE INCOMING CALL ALERTS (OPTIONAL)");calls.setOnClickListener(v->enableCallAlerts());root.addView(calls);
         Button stop=new Button(this);stop.setText("STOP FLOATING ANNU");stop.setOnClickListener(v->{appPrefs.edit().putBoolean("floating_enabled",false).apply();stopService(new Intent(this,FloatingService.class));});root.addView(stop);
         Button smaller=new Button(this);smaller.setText("MAKE ANNU SMALLER");smaller.setOnClickListener(v->overlayAction("SIZE_SMALL"));root.addView(smaller);
@@ -65,6 +66,17 @@ public class MainActivity extends Activity {
         setContentView(root);
         character.loadUrl("https://appassets.androidplatform.net/assets/annu.html");
         if(getIntent().getBooleanExtra("annu_incoming_call",false)){say("Boss, aapko call aa rahi hai. Kya aap baat karna chahenge?");getIntent().removeExtra("annu_incoming_call");}
+    }
+    private void configureBrain(){
+        LinearLayout panel=new LinearLayout(this);panel.setOrientation(LinearLayout.VERTICAL);panel.setPadding(28,12,28,4);
+        EditText endpoint=new EditText(this);endpoint.setSingleLine(true);endpoint.setHint("http://192.168.1.10:11434");endpoint.setText(appPrefs.getString("brain_url",""));panel.addView(endpoint);
+        EditText model=new EditText(this);model.setSingleLine(true);model.setHint("qwen3.5:0.8b");model.setText(appPrefs.getString("brain_model","qwen3.5:0.8b"));panel.addView(model);
+        new android.app.AlertDialog.Builder(this).setTitle("ANNU — Free Local AI")
+            .setMessage("Ollama laptop/PC par chalna chahiye aur phone same Wi-Fi par ho. Ollama ka LAN address yahan daalein, example http://192.168.1.10:11434. Model pehle PC par download hona chahiye. Is connection par cloud API fee nahi lagti; PC on rehna zaroori hai.")
+            .setView(panel)
+            .setPositiveButton("SAVE",(d,w)->{String url=endpoint.getText().toString().trim();String name=model.getText().toString().trim();appPrefs.edit().putString("brain_url",url).putString("brain_model",name.isEmpty()?"qwen3.5:0.8b":name).apply();say(url.isEmpty()?"Boss, local AI connection clear kar diya.":"Boss, AI server address save ho gaya. Ab us PC par Ollama chalayein.");})
+            .setNeutralButton("TEST CONNECTION",(d,w)->{String url=endpoint.getText().toString().trim();String name=model.getText().toString().trim();appPrefs.edit().putString("brain_url",url).putString("brain_model",name.isEmpty()?"qwen3.5:0.8b":name).apply();BrainClient.ask(this,"Reply only: ANNU connected.",(a,e)->say(a!=null?"AI connection successful. "+a:"AI connection failed: "+e));})
+            .setNegativeButton("CANCEL",null).show();
     }
     private void copyBundledModelIfMissing(){
         File target=new File(getFilesDir(),"annu.vrm");if(target.exists())return;
@@ -111,7 +123,7 @@ public class MainActivity extends Activity {
         if(c.contains("call ka message")){say("Boss, abhi call message history available nahi hai.");return;}
         if(c.contains("hello")||c.contains("hi")||c.contains("namaste")||c.contains("नमस्ते")||c.contains("annu")){say("Ji Boss! Main yahan hoon. Bataiye kya karna hai?");return;}
         if(c.contains("stop")||c.contains("band ho ja")){appPrefs.edit().putBoolean("floating_enabled",false).apply();stopService(new Intent(this,FloatingService.class));say("Theek hai Boss, floating mode band kar rahi hoon.");return;}
-        say("Boss, ye command abhi mere basic version mein nahi hai.");
+        BrainClient.ask(this,c,(answer,error)->{if(answer!=null)say(answer);else say("Boss, AI se jawab nahi mila. "+error);});
     }
     private void animate(String mode,String response){if(!appPrefs.getBoolean("floating_enabled",false)){say("Boss, pehle floating ANNU start kijiye.");return;}startService(new Intent(this,FloatingService.class).setAction("ANIM_"+mode));say(response);}
     private void launchIntent(Intent intent,String response){try{say(response);startActivity(intent);}catch(Exception e){say("Boss, ye feature is phone par available nahi hai.");}}
