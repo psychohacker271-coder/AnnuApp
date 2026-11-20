@@ -87,6 +87,11 @@ public class MainActivity extends Activity {
     }
     @Override public void onRequestPermissionsResult(int request,String[] permissions,int[] results){super.onRequestPermissionsResult(request,permissions,results);if(request==PERMISSION_REQUEST){boolean ok=true;for(int r:results)if(r!=PackageManager.PERMISSION_GRANTED)ok=false;if(ok)startAnnu();else say("Boss, permission allow karni hogi.");}}
     private void handleCommand(String c){
+        if(c.contains("settings")||c.contains("सेटिंग")){say("Boss, settings khol rahi hoon.");startActivity(new Intent(Settings.ACTION_SETTINGS));return;}
+        if(c.contains("camera")||c.contains("कैमरा")){launchIntent(new Intent("android.media.action.IMAGE_CAPTURE"),"Camera khol rahi hoon.");return;}
+        if(c.contains("maps")||c.contains("map")||c.contains("नक्शा")){launchIntent(new Intent(Intent.ACTION_VIEW,Uri.parse("geo:0,0?q=")),"Maps khol rahi hoon.");return;}
+        if(c.contains("bluetooth")){say("Boss, Bluetooth settings khol rahi hoon.");startActivity(new Intent(Settings.ACTION_BLUETOOTH_SETTINGS));return;}
+        if(c.contains("wifi")||c.contains("wi-fi")){say("Boss, Wi-Fi settings khol rahi hoon.");startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS));return;}
         if(c.contains("youtube")){launch("com.google.android.youtube","YouTube khol rahi hoon.");return;}
         if(c.contains("chrome")){launch("com.android.chrome","Chrome khol rahi hoon.");return;}
         if(c.contains("time")||c.contains("समय")||c.contains("kitne baje")){say("Boss, abhi "+new SimpleDateFormat("h:mm a",Locale.getDefault()).format(new Date())+" ho rahe hain.");return;}
@@ -97,7 +102,7 @@ public class MainActivity extends Activity {
         if(c.contains("stop")||c.contains("band ho ja")){stopService(new Intent(this,FloatingService.class));say("Theek hai Boss, floating mode band kar rahi hoon.");return;}
         say("Boss, ye command abhi mere basic version mein nahi hai.");
     }
-    private void launch(String pkg,String response){Intent i=getPackageManager().getLaunchIntentForPackage(pkg);if(i==null){say("Boss, ye app phone mein nahi mili.");return;}say(response);startActivity(i);}
+    private void launchIntent(Intent intent,String response){try{say(response);startActivity(intent);}catch(Exception e){say("Boss, ye feature is phone par available nahi hai.");}}\n    private void launch(String pkg,String response){Intent i=getPackageManager().getLaunchIntentForPackage(pkg);if(i==null){say("Boss, ye app phone mein nahi mili.");return;}say(response);startActivity(i);}
     private void say(String m){if(status!=null)status.setText(m);if(tts!=null)tts.speak(m,TextToSpeech.QUEUE_FLUSH,null,"annu_reply");}
     @Override protected void onResume(){super.onResume();if(appPrefs!=null&&appPrefs.getBoolean("floating_enabled",false))try{startService(new Intent(this,FloatingService.class).setAction("HIDE"));}catch(Exception ignored){}}
     @Override protected void onPause(){if(appPrefs!=null&&appPrefs.getBoolean("floating_enabled",false))try{startService(new Intent(this,FloatingService.class).setAction("SHOW"));}catch(Exception ignored){}super.onPause();}
