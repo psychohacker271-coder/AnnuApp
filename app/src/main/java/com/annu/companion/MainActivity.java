@@ -37,6 +37,7 @@ public class MainActivity extends Activity {
     private WebViewAssetLoader assetLoader;
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
+        appPrefs=getSharedPreferences("annu",MODE_PRIVATE);
         getWindow().setStatusBarColor(Color.rgb(35,22,57));getWindow().setNavigationBarColor(Color.rgb(35,22,57));
         assetLoader=AnnuWebAssets.create(this);
         copyBundledModelIfMissing();
