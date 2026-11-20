@@ -101,6 +101,8 @@ public class MainActivity extends Activity {
         if(c.contains("youtube")){launch("com.google.android.youtube","YouTube khol rahi hoon.");return;}
         if(c.contains("chrome")){launch("com.android.chrome","Chrome khol rahi hoon.");return;}
         if(c.contains("time")||c.contains("समय")||c.contains("kitne baje")){say("Boss, abhi "+new SimpleDateFormat("h:mm a",Locale.getDefault()).format(new Date())+" ho rahe hain.");return;}
+        if(c.contains("battery")||c.contains("बैटरी")){Intent b=registerReceiver(null,new android.content.IntentFilter(Intent.ACTION_BATTERY_CHANGED));if(b!=null){int level=b.getIntExtra("level",-1),scale=b.getIntExtra("scale",100);say(level>=0?"Boss, battery "+(level*100/Math.max(scale,1))+" percent hai.":"Boss, battery status nahi mil paaya.");}else say("Boss, battery status nahi mil paaya.");return;}
+        if(c.contains("date")||c.contains("tarikh")||c.contains("तारीख")){say("Boss, aaj "+new SimpleDateFormat("EEEE, d MMMM yyyy",Locale.getDefault()).format(new Date())+" hai.");return;}
         if(c.contains("dance")){animate("DANCE","Ji Boss, dance mode!");return;}
         if(c.contains("wave")||c.contains("haath hila")){animate("WAVE","Boss, hello!");return;}
         if(c.contains("so ja")||c.contains("sleep")){animate("SLEEP","Good night Boss.");return;}
@@ -108,7 +110,7 @@ public class MainActivity extends Activity {
         if(c.contains("kya yaad")||c.contains("what do you remember")||c.contains("mera note")||c.contains("note bata")){String note=appPrefs.getString("user_note","");say(note.isEmpty()?"Boss, abhi koi private note save nahi hai.":"Boss, aapka saved note: "+note);return;}
         if(c.contains("call ka message")){say("Boss, abhi call message history available nahi hai.");return;}
         if(c.contains("hello")||c.contains("hi")||c.contains("namaste")||c.contains("नमस्ते")||c.contains("annu")){say("Ji Boss! Main yahan hoon. Bataiye kya karna hai?");return;}
-        if(c.contains("stop")||c.contains("band ho ja")){stopService(new Intent(this,FloatingService.class));say("Theek hai Boss, floating mode band kar rahi hoon.");return;}
+        if(c.contains("stop")||c.contains("band ho ja")){appPrefs.edit().putBoolean("floating_enabled",false).apply();stopService(new Intent(this,FloatingService.class));say("Theek hai Boss, floating mode band kar rahi hoon.");return;}
         say("Boss, ye command abhi mere basic version mein nahi hai.");
     }
     private void animate(String mode,String response){if(!appPrefs.getBoolean("floating_enabled",false)){say("Boss, pehle floating ANNU start kijiye.");return;}startService(new Intent(this,FloatingService.class).setAction("ANIM_"+mode));say(response);}
