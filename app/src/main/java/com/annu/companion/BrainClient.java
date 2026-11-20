@@ -34,10 +34,11 @@ public final class BrainClient {
         IO.execute(()->{
             HttpURLConnection conn=null;
             try{
-                if(!endpoint.startsWith("http://")&&!endpoint.startsWith("https://"))throw new Exception("Endpoint http:// ya https:// se shuru hona chahiye.");
-                while(endpoint.endsWith("/"))endpoint=endpoint.substring(0,endpoint.length()-1);
-                if(!endpoint.endsWith("/api/chat"))endpoint+="/api/chat";
-                URL url=new URL(endpoint);
+                String targetEndpoint=endpoint;
+                if(!targetEndpoint.startsWith("http://")&&!targetEndpoint.startsWith("https://"))throw new Exception("Endpoint http:// ya https:// se shuru hona chahiye.");
+                while(targetEndpoint.endsWith("/"))targetEndpoint=targetEndpoint.substring(0,targetEndpoint.length()-1);
+                if(!targetEndpoint.endsWith("/api/chat"))targetEndpoint+="/api/chat";
+                URL url=new URL(targetEndpoint);
                 conn=(HttpURLConnection)url.openConnection();
                 conn.setRequestMethod("POST");
                 conn.setConnectTimeout(8000);
