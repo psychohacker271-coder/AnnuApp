@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.speech.RecognizerIntent;
 import android.speech.tts.TextToSpeech;
+import android.speech.tts.UtteranceProgressListener;
 import android.view.Gravity;
 import android.view.View;
 import android.webkit.WebSettings;
@@ -42,7 +43,7 @@ public class MainActivity extends Activity {
         getWindow().setStatusBarColor(Color.rgb(35,22,57));getWindow().setNavigationBarColor(Color.rgb(35,22,57));
         assetLoader=AnnuWebAssets.create(this);
         copyBundledModelIfMissing();
-        tts=new TextToSpeech(this,r->{if(r==TextToSpeech.SUCCESS){tts.setLanguage(new Locale("hi","IN"));tts.setSpeechRate(0.94f);}});
+        tts=new TextToSpeech(this,r->{if(r==TextToSpeech.SUCCESS){tts.setLanguage(new Locale("hi","IN"));tts.setSpeechRate(0.94f);tts.setOnUtteranceProgressListener(new UtteranceProgressListener(){@Override public void onStart(String id){runOnUiThread(()->setSpeechState(true));}@Override public void onDone(String id){runOnUiThread(()->setSpeechState(false));}@Override public void onError(String id){runOnUiThread(()->setSpeechState(false));}});}});
         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(10,8,10,8);root.setBackgroundColor(Color.rgb(35,22,57));
         character=new WebView(this);setupWebView(character);character.setBackgroundColor(Color.TRANSPARENT);
         root.addView(character,new LinearLayout.LayoutParams(-1,0,1));
@@ -111,6 +112,7 @@ public class MainActivity extends Activity {
     private void animate(String mode,String response){if(!appPrefs.getBoolean("floating_enabled",false)){say("Boss, pehle floating ANNU start kijiye.");return;}startService(new Intent(this,FloatingService.class).setAction("ANIM_"+mode));say(response);}
     private void launchIntent(Intent intent,String response){try{say(response);startActivity(intent);}catch(Exception e){say("Boss, ye feature is phone par available nahi hai.");}}
     private void launch(String pkg,String response){Intent i=getPackageManager().getLaunchIntentForPackage(pkg);if(i==null){say("Boss, ye app phone mein nahi mili.");return;}say(response);startActivity(i);}
+    private void setSpeechState(boolean active){if(appPrefs!=null&&appPrefs.getBoolean("floating_enabled",false)){try{startService(new Intent(this,FloatingService.class).setAction(active?"SPEAK_ON":"SPEAK_OFF"));}catch(Exception ignored){}}}
     private void say(String m){if(status!=null)status.setText(m);if(tts!=null)tts.speak(m,TextToSpeech.QUEUE_FLUSH,null,"annu_reply");}
     @Override protected void onResume(){super.onResume();if(appPrefs!=null&&appPrefs.getBoolean("floating_enabled",false))try{startService(new Intent(this,FloatingService.class).setAction("HIDE"));}catch(Exception ignored){}}
     @Override protected void onPause(){if(appPrefs!=null&&appPrefs.getBoolean("floating_enabled",false))try{startService(new Intent(this,FloatingService.class).setAction("SHOW"));}catch(Exception ignored){}super.onPause();}
