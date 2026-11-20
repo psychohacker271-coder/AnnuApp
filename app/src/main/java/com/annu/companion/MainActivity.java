@@ -9,6 +9,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.speech.RecognizerIntent;
+import android.media.MediaPlayer;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
 import android.view.Gravity;
@@ -37,6 +38,7 @@ public class MainActivity extends Activity {
     private TextToSpeech tts;
     private WebView character;
     private WebViewAssetLoader assetLoader;
+    private MediaPlayer importedPlayer;
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
         appPrefs=getSharedPreferences("annu",MODE_PRIVATE);
@@ -59,6 +61,7 @@ public class MainActivity extends Activity {
         Button language=new Button(this);language.setText(appPrefs.getString("speech_language","hi-IN").equals("hi-IN")?"VOICE LANGUAGE: HINDI":"VOICE LANGUAGE: ENGLISH");language.setOnClickListener(v->{String next=appPrefs.getString("speech_language","hi-IN").equals("hi-IN")?"en-IN":"hi-IN";appPrefs.edit().putString("speech_language",next).apply();if(tts!=null)tts.setLanguage(next.equals("hi-IN")?new Locale("hi","IN"):new Locale("en","IN"));language.setText(next.equals("hi-IN")?"VOICE LANGUAGE: HINDI":"VOICE LANGUAGE: ENGLISH");say(next.equals("hi-IN")?"Hindi voice select ho gayi.":"English voice selected.");});root.addView(language);
         Button vrm=new Button(this);vrm.setText("IMPORT / CHANGE VRM MODEL");vrm.setOnClickListener(v->pickVrm());root.addView(vrm);
         Button audio=new Button(this);audio.setText("IMPORT VOICE / AUDIO FILE");audio.setOnClickListener(v->pickAudio());root.addView(audio);
+        Button playAudio=new Button(this);playAudio.setText("PLAY IMPORTED AUDIO SAMPLE");playAudio.setOnClickListener(v->playImportedAudio());root.addView(playAudio);
         Button brain=new Button(this);brain.setText("CONNECT FREE LOCAL AI (OLLAMA)");brain.setOnClickListener(v->configureBrain());root.addView(brain);
         Button calls=new Button(this);calls.setText("ENABLE INCOMING CALL ALERTS (OPTIONAL)");calls.setOnClickListener(v->enableCallAlerts());root.addView(calls);
         Button stop=new Button(this);stop.setText("STOP FLOATING ANNU");stop.setOnClickListener(v->{appPrefs.edit().putBoolean("floating_enabled",false).apply();stopService(new Intent(this,FloatingService.class));});root.addView(stop);
@@ -69,6 +72,19 @@ public class MainActivity extends Activity {
         character.loadUrl("https://appassets.androidplatform.net/assets/annu.html");
         if(getIntent().getBooleanExtra("annu_incoming_call",false)){say("Boss, aapko call aa rahi hai. Kya aap baat karna chahenge?");getIntent().removeExtra("annu_incoming_call");}
         if(getIntent().getBooleanExtra("annu_wake",false)){getIntent().removeExtra("annu_wake");status.postDelayed(()->{say("Ji Boss, main sun rahi hoon.");listen();},700);}
+    }
+    private void playImportedAudio(){
+        String path=appPrefs.getString("latest_audio_path","");
+        if(path.isEmpty()||!new File(path).isFile()){say("Boss, pehle audio file import kijiye.");return;}
+        try{
+            if(importedPlayer!=null){importedPlayer.release();importedPlayer=null;}
+            importedPlayer=new MediaPlayer();
+            importedPlayer.setDataSource(path);
+            importedPlayer.setOnPreparedListener(mp->{mp.start();say("Boss, aapka imported audio sample play ho raha hai.");});
+            importedPlayer.setOnCompletionListener(mp->{mp.release();if(importedPlayer==mp)importedPlayer=null;});
+            importedPlayer.setOnErrorListener((mp,what,extra)->{mp.release();importedPlayer=null;say("Boss, ye audio format play nahi ho paaya.");return true;});
+            importedPlayer.prepareAsync();
+        }catch(Exception e){say("Boss, audio play nahi ho paaya.");android.util.Log.e("ANNU","Audio playback failed",e);}
     }
     private void configureBrain(){
         LinearLayout panel=new LinearLayout(this);panel.setOrientation(LinearLayout.VERTICAL);panel.setPadding(28,12,28,4);
@@ -100,7 +116,7 @@ public class MainActivity extends Activity {
     @Override protected void onActivityResult(int req,int result,Intent data){super.onActivityResult(req,result,data);
         if(req==OVERLAY_REQUEST&&Settings.canDrawOverlays(this))startAnnu();
         if(result==RESULT_OK&&data!=null&&data.getData()!=null&&(req==VRM_PICK||req==AUDIO_PICK)){
-            try{if(req==VRM_PICK){importFile(data.getData(),new File(getFilesDir(),"annu.vrm"));say("Boss, VRM model save ho gaya. App ko dobara kholne par bhi rahega.");}else{File dir=new File(getFilesDir(),"audio");dir.mkdirs();String name="audio_"+System.currentTimeMillis();importFile(data.getData(),new File(dir,name));say("Boss, audio file phone mein save ho gayi.");}refreshAssetStatus();if(character!=null)character.reload();}
+            try{if(req==VRM_PICK){importFile(data.getData(),new File(getFilesDir(),"annu.vrm"));say("Boss, VRM model save ho gaya. App ko dobara kholne par bhi rahega.");}else{File dir=new File(getFilesDir(),"audio");dir.mkdirs();String mime=getContentResolver().getType(data.getData());String ext=mime!=null&&mime.contains("mpeg")?".mp3":mime!=null&&mime.contains("wav")?".wav":mime!=null&&mime.contains("mp4")?".m4a":mime!=null&&mime.contains("ogg")?".ogg":mime!=null&&mime.contains("aac")?".aac":".audio";File saved=new File(dir,"audio_"+System.currentTimeMillis()+ext);importFile(data.getData(),saved);appPrefs.edit().putString("latest_audio_path",saved.getAbsolutePath()).apply();say("Boss, audio file phone mein save ho gayi. Aap Play Imported Audio se sun sakte hain.");}refreshAssetStatus();if(character!=null)character.reload();}
             catch(Exception e){say("Boss, file import nahi ho paayi.");android.util.Log.e("ANNU","Import failed",e);}
         }
         if(req==SPEECH_REQUEST&&result==RESULT_OK&&data!=null){ArrayList<String>a=data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);if(a!=null&&!a.isEmpty())handleCommand(a.get(0).toLowerCase(Locale.ROOT));}
@@ -134,7 +150,7 @@ public class MainActivity extends Activity {
         if(c.contains("so ja")||c.contains("sleep")){animate("SLEEP","Good night Boss.");return;}
         if(c.contains("wake")||c.contains("uth ja")||c.contains("jaag")){animate("WAKE","Ji Boss, main jag gayi!");return;}
         if(c.contains("kya yaad")||c.contains("what do you remember")||c.contains("mera note")||c.contains("note bata")){String note=appPrefs.getString("user_note","");say(note.isEmpty()?"Boss, abhi koi private note save nahi hai.":"Boss, aapka saved note: "+note);return;}
-        if(c.contains("call ka message")){say("Boss, abhi call message history available nahi hai.");return;}
+        if(c.contains("play audio")||c.contains("voice sample")||c.contains("audio chala")||c.contains("audio sun")){playImportedAudio();return;}\n        if(c.contains("call ka message")){say("Boss, abhi call message history available nahi hai.");return;}
         if(c.contains("hello")||c.contains("hi")||c.contains("namaste")||c.contains("नमस्ते")||c.contains("annu")){say("Ji Boss! Main yahan hoon. Bataiye kya karna hai?");return;}
         if(c.contains("stop")||c.contains("band ho ja")){appPrefs.edit().putBoolean("floating_enabled",false).apply();stopService(new Intent(this,FloatingService.class));say("Theek hai Boss, floating mode band kar rahi hoon.");return;}
         BrainClient.ask(this,c,(answer,error)->{if(answer!=null)say(answer);else say("Boss, AI se jawab nahi mila. "+error);});
@@ -146,5 +162,5 @@ public class MainActivity extends Activity {
     private void say(String m){if(status!=null)status.setText(m);if(tts!=null)tts.speak(m,TextToSpeech.QUEUE_FLUSH,null,"annu_reply");}
     @Override protected void onResume(){super.onResume();if(appPrefs!=null&&appPrefs.getBoolean("floating_enabled",false))try{startService(new Intent(this,FloatingService.class).setAction("HIDE"));}catch(Exception ignored){}}
     @Override protected void onPause(){if(appPrefs!=null&&appPrefs.getBoolean("floating_enabled",false))try{startService(new Intent(this,FloatingService.class).setAction("SHOW"));}catch(Exception ignored){}super.onPause();}
-    @Override protected void onDestroy(){if(character!=null)character.destroy();if(tts!=null){tts.stop();tts.shutdown();}super.onDestroy();}
+    @Override protected void onDestroy(){if(character!=null)character.destroy();if(importedPlayer!=null){importedPlayer.release();importedPlayer=null;}if(tts!=null){tts.stop();tts.shutdown();}super.onDestroy();}
 }
