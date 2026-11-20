@@ -108,7 +108,8 @@ public class MainActivity extends Activity {
         if(c.contains("stop")||c.contains("band ho ja")){stopService(new Intent(this,FloatingService.class));say("Theek hai Boss, floating mode band kar rahi hoon.");return;}
         say("Boss, ye command abhi mere basic version mein nahi hai.");
     }
-    private void animate(String mode,String response){if(!appPrefs.getBoolean("floating_enabled",false)){say("Boss, pehle floating ANNU start kijiye.");return;}startService(new Intent(this,FloatingService.class).setAction("ANIM_"+mode));say(response);}\n    private void launchIntent(Intent intent,String response){try{say(response);startActivity(intent);}catch(Exception e){say("Boss, ye feature is phone par available nahi hai.");}}
+    private void animate(String mode,String response){if(!appPrefs.getBoolean("floating_enabled",false)){say("Boss, pehle floating ANNU start kijiye.");return;}startService(new Intent(this,FloatingService.class).setAction("ANIM_"+mode));say(response);}
+    private void launchIntent(Intent intent,String response){try{say(response);startActivity(intent);}catch(Exception e){say("Boss, ye feature is phone par available nahi hai.");}}
     private void launch(String pkg,String response){Intent i=getPackageManager().getLaunchIntentForPackage(pkg);if(i==null){say("Boss, ye app phone mein nahi mili.");return;}say(response);startActivity(i);}
     private void say(String m){if(status!=null)status.setText(m);if(tts!=null)tts.speak(m,TextToSpeech.QUEUE_FLUSH,null,"annu_reply");}
     @Override protected void onResume(){super.onResume();if(appPrefs!=null&&appPrefs.getBoolean("floating_enabled",false))try{startService(new Intent(this,FloatingService.class).setAction("HIDE"));}catch(Exception ignored){}}
