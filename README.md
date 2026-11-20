@@ -9,7 +9,8 @@ ANNU is an early Android-native prototype for a user-controlled floating VRM com
 - User-started floating overlay foreground service.
 - Drag the overlay; its last position is saved and restored.
 - App controls to make the overlay smaller/larger and reset its size/position.
-- One-shot Android speech recognition and Android TextToSpeech replies.
+- One-shot Android speech recognition and Android TextToSpeech replies, with selectable Hindi/English recognition and voice output.
+- Basic VRM idle, blink, wave, dance, sleep and wake gesture states; TTS playback drives a simple mouth expression when the model supports it.
 - Basic allowlisted commands: open YouTube, Chrome, Camera, Maps, Android Settings, Wi-Fi and Bluetooth settings; tell the time, greet, and stop the overlay.
 - Optional private note stored locally in Android SharedPreferences; user can edit/clear it in the app and ask ANNU to recall it by voice. The note is not sent to a server.
 - Incoming-call notification alert only (phone-state broadcast).
@@ -19,10 +20,10 @@ GitHub Actions runs on pushes to `main`. Open **Actions → Build ANNU APK**, wa
 
 ## Current limitations — please read
 - The current VRM is the model file already committed in the repository; it may not visually match a separate anime reference image.
-- Three.js and three-vrm are currently loaded from jsDelivr, so the 3D view needs an internet connection. This is not yet a fully offline package.
-- The current renderer has basic idle movement and blinking only. Walking, sitting, dancing, full facial/lip-sync animation, and a complete animation state system are not implemented.
+- The build workflow now bundles the Three.js, GLTFLoader and three-vrm module files into the APK so the 3D runtime itself can load without fetching those libraries. The build machine still needs internet access to download these files when producing a new APK.
+- Character gestures are basic procedural bone rotations, not motion-captured animation clips. Walking, sitting, rich facial expressions, and phoneme-accurate lip-sync are not implemented. Lip movement is a simple mouth-open expression while Android TTS speaks and depends on the VRM model supporting the expression.
 - Voice input is currently tap-to-talk using Android's speech recognizer. There is no always-on wake-word service. Screen-off wake-word operation is not guaranteed on Android 15 and device battery policies.
-- The app is not a general-purpose AI assistant yet. It does not have a connected conversational AI brain or unrestricted phone control.
+- The app does not yet contain a generative conversational AI brain. It uses a small offline command parser and saved private note; it is not an unrestricted phone-control agent.
 - The incoming-call feature only detects ringing and shows a notification. It cannot hear the caller, answer/decline calls, or conduct a conversation. Android's call-audio and default-dialer restrictions apply.
 - Imported audio is stored but is not yet wired into the character's speech engine.
 - No private messages, contacts, call audio, or screen contents are read. Sensitive actions should require explicit user confirmation.
