@@ -77,9 +77,6 @@ public class WakeWordService extends Service {
                 triggered=true;
                 try{if(recognizer!=null)recognizer.cancel();}catch(Exception ignored){}
                 NotificationManager nm=getSystemService(NotificationManager.class);
-                Notification alert=new Notification.Builder(this,CHANNEL).setSmallIcon(android.R.drawable.ic_btn_speak_now)
-                    .setContentTitle("ANNU heard you 💜").setContentText("Boss, main sun rahi hoon. Tap to talk.")
-                    .setContentIntent(buildNotification("Wake phrase detected").contentIntent).setAutoCancel(true).build();
                 // Use a fresh activity PendingIntent for the wake notification.
                 Intent open=new Intent(this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_SINGLE_TOP).putExtra("annu_wake",true);
                 PendingIntent pi=PendingIntent.getActivity(this,45,open,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
