@@ -60,8 +60,9 @@ public class MainActivity extends Activity {
         Button stopWake=new Button(this);stopWake.setText("STOP HEY ANNU LISTENING");stopWake.setOnClickListener(v->{stopService(new Intent(this,WakeWordService.class));say("Boss, wake phrase listening band kar di.");});root.addView(stopWake);
         Button language=new Button(this);language.setText(appPrefs.getString("speech_language","hi-IN").equals("hi-IN")?"VOICE LANGUAGE: HINDI":"VOICE LANGUAGE: ENGLISH");language.setOnClickListener(v->{String next=appPrefs.getString("speech_language","hi-IN").equals("hi-IN")?"en-IN":"hi-IN";appPrefs.edit().putString("speech_language",next).apply();if(tts!=null)tts.setLanguage(next.equals("hi-IN")?new Locale("hi","IN"):new Locale("en","IN"));language.setText(next.equals("hi-IN")?"VOICE LANGUAGE: HINDI":"VOICE LANGUAGE: ENGLISH");say(next.equals("hi-IN")?"Hindi voice select ho gayi.":"English voice selected.");});root.addView(language);
         Button vrm=new Button(this);vrm.setText("IMPORT / CHANGE VRM MODEL");vrm.setOnClickListener(v->pickVrm());root.addView(vrm);
-        Button audio=new Button(this);audio.setText("IMPORT VOICE / AUDIO FILE");audio.setOnClickListener(v->pickAudio());root.addView(audio);
+        Button audio=new Button(this);audio.setText("IMPORT AUDIO SAMPLE");audio.setOnClickListener(v->pickAudio());root.addView(audio);
         Button playAudio=new Button(this);playAudio.setText("PLAY IMPORTED AUDIO SAMPLE");playAudio.setOnClickListener(v->playImportedAudio());root.addView(playAudio);
+        Button stopAudio=new Button(this);stopAudio.setText("STOP AUDIO SAMPLE");stopAudio.setOnClickListener(v->stopImportedAudio());root.addView(stopAudio);
         Button brain=new Button(this);brain.setText("CONNECT FREE LOCAL AI (OLLAMA)");brain.setOnClickListener(v->configureBrain());root.addView(brain);
         Button calls=new Button(this);calls.setText("ENABLE INCOMING CALL ALERTS (OPTIONAL)");calls.setOnClickListener(v->enableCallAlerts());root.addView(calls);
         Button stop=new Button(this);stop.setText("STOP FLOATING ANNU");stop.setOnClickListener(v->{appPrefs.edit().putBoolean("floating_enabled",false).apply();stopService(new Intent(this,FloatingService.class));});root.addView(stop);
@@ -73,6 +74,7 @@ public class MainActivity extends Activity {
         if(getIntent().getBooleanExtra("annu_incoming_call",false)){say("Boss, aapko call aa rahi hai. Kya aap baat karna chahenge?");getIntent().removeExtra("annu_incoming_call");}
         if(getIntent().getBooleanExtra("annu_wake",false)){getIntent().removeExtra("annu_wake");status.postDelayed(()->{say("Ji Boss, main sun rahi hoon.");listen();},700);}
     }
+    private void stopImportedAudio(){if(importedPlayer!=null){try{importedPlayer.stop();}catch(Exception ignored){}importedPlayer.release();importedPlayer=null;}if(status!=null)status.setText("Audio sample stopped.");}
     private void playImportedAudio(){
         String path=appPrefs.getString("latest_audio_path","");
         if(path.isEmpty()||!new File(path).isFile()){say("Boss, pehle audio file import kijiye.");return;}
@@ -80,7 +82,7 @@ public class MainActivity extends Activity {
             if(importedPlayer!=null){importedPlayer.release();importedPlayer=null;}
             importedPlayer=new MediaPlayer();
             importedPlayer.setDataSource(path);
-            importedPlayer.setOnPreparedListener(mp->{mp.start();say("Boss, aapka imported audio sample play ho raha hai.");});
+            importedPlayer.setOnPreparedListener(mp->{mp.start();if(status!=null)status.setText("Imported audio sample playing…");});
             importedPlayer.setOnCompletionListener(mp->{mp.release();if(importedPlayer==mp)importedPlayer=null;});
             importedPlayer.setOnErrorListener((mp,what,extra)->{mp.release();importedPlayer=null;say("Boss, ye audio format play nahi ho paaya.");return true;});
             importedPlayer.prepareAsync();
