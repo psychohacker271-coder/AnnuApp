@@ -43,7 +43,7 @@ public class MainActivity extends Activity {
         getWindow().setStatusBarColor(Color.rgb(35,22,57));getWindow().setNavigationBarColor(Color.rgb(35,22,57));
         assetLoader=AnnuWebAssets.create(this);
         copyBundledModelIfMissing();
-        tts=new TextToSpeech(this,r->{if(r==TextToSpeech.SUCCESS){tts.setLanguage(new Locale("hi","IN"));tts.setSpeechRate(0.94f);tts.setOnUtteranceProgressListener(new UtteranceProgressListener(){@Override public void onStart(String id){runOnUiThread(()->setSpeechState(true));}@Override public void onDone(String id){runOnUiThread(()->setSpeechState(false));}@Override public void onError(String id){runOnUiThread(()->setSpeechState(false));}});}});
+        tts=new TextToSpeech(this,r->{if(r==TextToSpeech.SUCCESS){tts.setLanguage(appPrefs.getString("speech_language","hi-IN").equals("hi-IN")?new Locale("hi","IN"):new Locale("en","IN"));tts.setSpeechRate(0.94f);tts.setOnUtteranceProgressListener(new UtteranceProgressListener(){@Override public void onStart(String id){runOnUiThread(()->setSpeechState(true));}@Override public void onDone(String id){runOnUiThread(()->setSpeechState(false));}@Override public void onError(String id){runOnUiThread(()->setSpeechState(false));}});}});
         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(10,8,10,8);root.setBackgroundColor(Color.rgb(35,22,57));
         character=new WebView(this);setupWebView(character);character.setBackgroundColor(Color.TRANSPARENT);
         root.addView(character,new LinearLayout.LayoutParams(-1,0,1));
