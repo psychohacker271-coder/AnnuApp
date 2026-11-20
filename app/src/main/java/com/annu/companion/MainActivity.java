@@ -31,7 +31,7 @@ import java.util.Date;
 import java.util.Locale;
 
 public class MainActivity extends Activity {
-    private static final int OVERLAY_REQUEST=701, SPEECH_REQUEST=703, PERMISSION_REQUEST=704, VRM_PICK=705, AUDIO_PICK=706, CALL_PERMISSION_REQUEST=707, WAKE_PERMISSION_REQUEST=708;
+    private static final int OVERLAY_REQUEST=701, SPEECH_REQUEST=703, PERMISSION_REQUEST=704, VRM_PICK=705, AUDIO_PICK=706, CALL_PERMISSION_REQUEST=707, WAKE_PERMISSION_REQUEST=708, WAKE_NOTIFICATION_REQUEST=709;
     private TextView status, assetStatus;
     private android.content.SharedPreferences appPrefs;
     private TextToSpeech tts;
@@ -105,7 +105,7 @@ public class MainActivity extends Activity {
         }
         if(req==SPEECH_REQUEST&&result==RESULT_OK&&data!=null){ArrayList<String>a=data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);if(a!=null&&!a.isEmpty())handleCommand(a.get(0).toLowerCase(Locale.ROOT));}
     }
-    @Override public void onRequestPermissionsResult(int request,String[] permissions,int[] results){super.onRequestPermissionsResult(request,permissions,results);if(request==CALL_PERMISSION_REQUEST){say(results.length>0&&results[0]==PackageManager.PERMISSION_GRANTED?"Boss, incoming call alerts enable ho gaye.":"Boss, call alerts ke liye phone permission nahi mili.");return;}if(request==WAKE_PERMISSION_REQUEST){if(results.length>0&&results[0]==PackageManager.PERMISSION_GRANTED)startWakeWord();else say("Boss, wake phrase ke liye microphone permission zaroori hai.");return;}if(request==PERMISSION_REQUEST){boolean ok=true;for(int r:results)if(r!=PackageManager.PERMISSION_GRANTED)ok=false;if(ok)startAnnu();else say("Boss, floating mode ke liye notification permission allow karein.");}}
+    @Override public void onRequestPermissionsResult(int request,String[] permissions,int[] results){super.onRequestPermissionsResult(request,permissions,results);if(request==CALL_PERMISSION_REQUEST){say(results.length>0&&results[0]==PackageManager.PERMISSION_GRANTED?"Boss, incoming call alerts enable ho gaye.":"Boss, call alerts ke liye phone permission nahi mili.");return;}if(request==WAKE_PERMISSION_REQUEST){if(results.length>0&&results[0]==PackageManager.PERMISSION_GRANTED)startWakeWord();else say("Boss, wake phrase ke liye microphone permission zaroori hai.");return;}if(request==WAKE_NOTIFICATION_REQUEST){if(results.length>0&&results[0]==PackageManager.PERMISSION_GRANTED)startWakeWord();else say("Boss, wake alert dikhane ke liye notification permission allow karein.");return;}if(request==PERMISSION_REQUEST){boolean ok=true;for(int r:results)if(r!=PackageManager.PERMISSION_GRANTED)ok=false;if(ok)startAnnu();else say("Boss, floating mode ke liye notification permission allow karein.");}}
     private void enableWakeWord(){
         if(checkSelfPermission(Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED){requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO},WAKE_PERMISSION_REQUEST);return;}
         startWakeWord();
