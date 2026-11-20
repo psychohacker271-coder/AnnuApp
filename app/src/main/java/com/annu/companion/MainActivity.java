@@ -15,6 +15,7 @@ import android.view.View;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.graphics.Color;
@@ -48,6 +49,8 @@ public class MainActivity extends Activity {
         TextView title=new TextView(this);title.setText("ANNU  💜");title.setTextColor(Color.WHITE);title.setTextSize(25);title.setGravity(Gravity.CENTER);title.setPadding(8,4,8,4);root.addView(title);
         status=new TextView(this);status.setText("Ji Boss! Main yahan hoon.");status.setTextColor(Color.WHITE);status.setTextSize(15);status.setGravity(Gravity.CENTER);status.setPadding(8,4,8,6);root.addView(status);
         assetStatus=new TextView(this);assetStatus.setTextColor(Color.LTGRAY);assetStatus.setTextSize(12);assetStatus.setGravity(Gravity.CENTER);root.addView(assetStatus);refreshAssetStatus();
+        EditText memoryInput=new EditText(this);memoryInput.setSingleLine(false);memoryInput.setMinLines(1);memoryInput.setMaxLines(3);memoryInput.setHint("ANNU ke liye local note likhein…");memoryInput.setTextColor(Color.WHITE);memoryInput.setHintTextColor(Color.LTGRAY);memoryInput.setText(appPrefs.getString("user_note",""));root.addView(memoryInput);
+        Button saveMemory=new Button(this);saveMemory.setText("SAVE PRIVATE NOTE ON THIS PHONE");saveMemory.setOnClickListener(v->{String note=memoryInput.getText().toString().trim();appPrefs.edit().putString("user_note",note).apply();say(note.isEmpty()?"Boss, note clear kar diya.":"Ji Boss, note isi phone par save kar diya.");});root.addView(saveMemory);
         Button start=new Button(this);start.setText("FLOAT ANNU ON SCREEN");start.setOnClickListener(v->startAnnu());root.addView(start);
         Button speak=new Button(this);speak.setText("🎙  TALK TO ANNU");speak.setOnClickListener(v->listen());root.addView(speak);
         Button vrm=new Button(this);vrm.setText("IMPORT / CHANGE VRM MODEL");vrm.setOnClickListener(v->pickVrm());root.addView(vrm);
@@ -97,6 +100,7 @@ public class MainActivity extends Activity {
         if(c.contains("time")||c.contains("समय")||c.contains("kitne baje")){say("Boss, abhi "+new SimpleDateFormat("h:mm a",Locale.getDefault()).format(new Date())+" ho rahe hain.");return;}
         if(c.contains("dance")){say("Boss, dance animation abhi add nahi hui hai.");return;}
         if(c.contains("so ja")||c.contains("sleep")){say("Theek hai Boss, sleep animation agle phase mein add hogi.");return;}
+        if(c.contains("kya yaad")||c.contains("what do you remember")||c.contains("mera note")||c.contains("note bata")){String note=appPrefs.getString("user_note","");say(note.isEmpty()?"Boss, abhi koi private note save nahi hai.":"Boss, aapka saved note: "+note);return;}
         if(c.contains("call ka message")){say("Boss, abhi call message history available nahi hai.");return;}
         if(c.contains("hello")||c.contains("hi")||c.contains("namaste")||c.contains("नमस्ते")||c.contains("annu")){say("Ji Boss! Main yahan hoon. Bataiye kya karna hai?");return;}
         if(c.contains("stop")||c.contains("band ho ja")){stopService(new Intent(this,FloatingService.class));say("Theek hai Boss, floating mode band kar rahi hoon.");return;}
