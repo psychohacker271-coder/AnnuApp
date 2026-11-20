@@ -26,7 +26,7 @@ try{
  document.body.appendChild(renderer.domElement);
  scene.add(new THREE.HemisphereLight(0xffffff,0x665577,2));
  const light=new THREE.DirectionalLight(0xffffff,2);light.position.set(1,2,3);scene.add(light);
- let vrm=null,head=null,chest=null,blinkTimer=0,blinkValue=0,blinkPhase=0;
+ let vrm=null,head=null,chest=null,leftArm=null,rightArm=null,blinkTimer=0,blinkValue=0,blinkPhase=0,action='idle',actionStarted=0;
  const loader=new GLTFLoader();loader.register(parser=>new VRMLoaderPlugin(parser));
  msg.textContent='ANNU ka model load ho raha hai…';
  loader.load('../model/annu.vrm',gltf=>{
@@ -44,10 +44,10 @@ try{
    camera.position.set(0,h*.52,d*1.12);
    camera.lookAt(0,h*.49,0);
    vrm.scene.traverse(o=>o.frustumCulled=false);
-   try{head=vrm.humanoid?.getNormalizedBoneNode('head');chest=vrm.humanoid?.getNormalizedBoneNode('chest');}catch(e){}
+   try{head=vrm.humanoid?.getNormalizedBoneNode('head');chest=vrm.humanoid?.getNormalizedBoneNode('chest');leftArm=vrm.humanoid?.getNormalizedBoneNode('leftUpperArm');rightArm=vrm.humanoid?.getNormalizedBoneNode('rightUpperArm');}catch(e){}
    msg.textContent='Ji Boss! Main yahan hoon 💜';
  },p=>{if(p.total)msg.textContent='Model '+Math.round(p.loaded/p.total*100)+'%…'},fail);
- function resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)}
+ window.annuAction=function(next){action=String(next||'idle');actionStarted=performance.now()*.001;msg.textContent=action==='sleep'?'Good night Boss 🌙':action==='wake'?'Ji Boss, main jag gayi! 💜':'Ji Boss! 💜';};\n function resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)}
  addEventListener('resize',resize);
  const clock=new THREE.Clock();
  function animate(){
