@@ -98,15 +98,17 @@ public class MainActivity extends Activity {
         if(c.contains("youtube")){launch("com.google.android.youtube","YouTube khol rahi hoon.");return;}
         if(c.contains("chrome")){launch("com.android.chrome","Chrome khol rahi hoon.");return;}
         if(c.contains("time")||c.contains("समय")||c.contains("kitne baje")){say("Boss, abhi "+new SimpleDateFormat("h:mm a",Locale.getDefault()).format(new Date())+" ho rahe hain.");return;}
-        if(c.contains("dance")){say("Boss, dance animation abhi add nahi hui hai.");return;}
-        if(c.contains("so ja")||c.contains("sleep")){say("Theek hai Boss, sleep animation agle phase mein add hogi.");return;}
+        if(c.contains("dance")){animate("DANCE","Ji Boss, dance mode!");return;}
+        if(c.contains("wave")||c.contains("haath hila")){animate("WAVE","Boss, hello!");return;}
+        if(c.contains("so ja")||c.contains("sleep")){animate("SLEEP","Good night Boss.");return;}
+        if(c.contains("wake")||c.contains("uth ja")||c.contains("jaag")){animate("WAKE","Ji Boss, main jag gayi!");return;}
         if(c.contains("kya yaad")||c.contains("what do you remember")||c.contains("mera note")||c.contains("note bata")){String note=appPrefs.getString("user_note","");say(note.isEmpty()?"Boss, abhi koi private note save nahi hai.":"Boss, aapka saved note: "+note);return;}
         if(c.contains("call ka message")){say("Boss, abhi call message history available nahi hai.");return;}
         if(c.contains("hello")||c.contains("hi")||c.contains("namaste")||c.contains("नमस्ते")||c.contains("annu")){say("Ji Boss! Main yahan hoon. Bataiye kya karna hai?");return;}
         if(c.contains("stop")||c.contains("band ho ja")){stopService(new Intent(this,FloatingService.class));say("Theek hai Boss, floating mode band kar rahi hoon.");return;}
         say("Boss, ye command abhi mere basic version mein nahi hai.");
     }
-    private void launchIntent(Intent intent,String response){try{say(response);startActivity(intent);}catch(Exception e){say("Boss, ye feature is phone par available nahi hai.");}}
+    private void animate(String mode,String response){if(!appPrefs.getBoolean("floating_enabled",false)){say("Boss, pehle floating ANNU start kijiye.");return;}startService(new Intent(this,FloatingService.class).setAction("ANIM_"+mode));say(response);}\n    private void launchIntent(Intent intent,String response){try{say(response);startActivity(intent);}catch(Exception e){say("Boss, ye feature is phone par available nahi hai.");}}
     private void launch(String pkg,String response){Intent i=getPackageManager().getLaunchIntentForPackage(pkg);if(i==null){say("Boss, ye app phone mein nahi mili.");return;}say(response);startActivity(i);}
     private void say(String m){if(status!=null)status.setText(m);if(tts!=null)tts.speak(m,TextToSpeech.QUEUE_FLUSH,null,"annu_reply");}
     @Override protected void onResume(){super.onResume();if(appPrefs!=null&&appPrefs.getBoolean("floating_enabled",false))try{startService(new Intent(this,FloatingService.class).setAction("HIDE"));}catch(Exception ignored){}}
