@@ -10,7 +10,8 @@ ANNU is an early Android-native prototype for a user-controlled floating VRM com
 - Drag the overlay; its last position is saved and restored.
 - App controls to make the overlay smaller/larger and reset its size/position.
 - One-shot Android speech recognition and Android TextToSpeech replies.
-- Basic allowlisted commands: open YouTube, open Chrome, tell the time, greet, and stop the overlay.
+- Basic allowlisted commands: open YouTube, Chrome, Camera, Maps, Android Settings, Wi-Fi and Bluetooth settings; tell the time, greet, and stop the overlay.
+- Optional private note stored locally in Android SharedPreferences; user can edit/clear it in the app and ask ANNU to recall it by voice. The note is not sent to a server.
 - Incoming-call notification alert only (phone-state broadcast).
 
 ## Build an APK
