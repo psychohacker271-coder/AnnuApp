@@ -47,7 +47,7 @@ try{
    try{head=vrm.humanoid?.getNormalizedBoneNode('head');chest=vrm.humanoid?.getNormalizedBoneNode('chest');leftArm=vrm.humanoid?.getNormalizedBoneNode('leftUpperArm');rightArm=vrm.humanoid?.getNormalizedBoneNode('rightUpperArm');}catch(e){}
    msg.textContent='Ji Boss! Main yahan hoon 💜';
  },p=>{if(p.total)msg.textContent='Model '+Math.round(p.loaded/p.total*100)+'%…'},fail);
- window.annuAction=function(next){action=String(next||'idle');actionStarted=performance.now()*.001;msg.textContent=action==='sleep'?'Good night Boss 🌙':action==='wake'?'Ji Boss, main jag gayi! 💜':'Ji Boss! 💜';};
+ window.annuAction=function(next){const requested=String(next||'idle');action=requested==='wake'?'idle':requested;if(requested==='wake'){blinkValue=0;blinkPhase=0;try{vrm?.expressionManager?.setValue('blink',0);}catch(e){}}actionStarted=performance.now()*.001;msg.textContent=requested==='sleep'?'Good night Boss 🌙':requested==='wake'?'Ji Boss, main jag gayi! 💜':'Ji Boss! 💜';};
  function resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)}
  addEventListener('resize',resize);
  const clock=new THREE.Clock();
