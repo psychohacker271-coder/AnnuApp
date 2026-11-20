@@ -53,6 +53,9 @@ public class MainActivity extends Activity {
         Button vrm=new Button(this);vrm.setText("IMPORT / CHANGE VRM MODEL");vrm.setOnClickListener(v->pickVrm());root.addView(vrm);
         Button audio=new Button(this);audio.setText("IMPORT VOICE / AUDIO FILE");audio.setOnClickListener(v->pickAudio());root.addView(audio);
         Button stop=new Button(this);stop.setText("STOP FLOATING ANNU");stop.setOnClickListener(v->{appPrefs.edit().putBoolean("floating_enabled",false).apply();stopService(new Intent(this,FloatingService.class));});root.addView(stop);
+        Button smaller=new Button(this);smaller.setText("MAKE ANNU SMALLER");smaller.setOnClickListener(v->overlayAction("SIZE_SMALL"));root.addView(smaller);
+        Button larger=new Button(this);larger.setText("MAKE ANNU LARGER");larger.setOnClickListener(v->overlayAction("SIZE_LARGE"));root.addView(larger);
+        Button reset=new Button(this);reset.setText("RESET ANNU POSITION & SIZE");reset.setOnClickListener(v->overlayAction("SIZE_RESET"));root.addView(reset);
         setContentView(root);
         character.loadUrl("https://appassets.androidplatform.net/assets/annu.html");
         if(getIntent().getBooleanExtra("annu_incoming_call",false)){say("Boss, aapko call aa rahi hai. Kya aap baat karna chahenge?");getIntent().removeExtra("annu_incoming_call");}
@@ -72,7 +75,7 @@ public class MainActivity extends Activity {
         if(checkSelfPermission(Manifest.permission.READ_PHONE_STATE)!=PackageManager.PERMISSION_GRANTED){requestPermissions(new String[]{Manifest.permission.READ_PHONE_STATE},PERMISSION_REQUEST);return;}
         appPrefs.edit().putBoolean("floating_enabled",true).apply();Intent service=new Intent(this,FloatingService.class);if(Build.VERSION.SDK_INT>=26)startForegroundService(service);else startService(service);say("Ji Boss! Floating mode shuru kar diya hai.");
     }
-    private void listen(){Intent i=new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);i.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);i.putExtra(RecognizerIntent.EXTRA_LANGUAGE,"hi-IN");i.putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE,"hi-IN");i.putExtra(RecognizerIntent.EXTRA_PROMPT,"ANNU sun rahi hai...");try{startActivityForResult(i,SPEECH_REQUEST);}catch(Exception e){say("Voice recognition abhi available nahi hai.");}}
+    private void overlayAction(String action){if(!appPrefs.getBoolean("floating_enabled",false)){say("Boss, pehle floating ANNU start kijiye.");return;}Intent i=new Intent(this,FloatingService.class).setAction(action);startService(i);say("Ji Boss, setting update kar di.");}\n    private void listen(){Intent i=new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);i.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);i.putExtra(RecognizerIntent.EXTRA_LANGUAGE,"hi-IN");i.putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE,"hi-IN");i.putExtra(RecognizerIntent.EXTRA_PROMPT,"ANNU sun rahi hai...");try{startActivityForResult(i,SPEECH_REQUEST);}catch(Exception e){say("Voice recognition abhi available nahi hai.");}}
     @Override protected void onActivityResult(int req,int result,Intent data){super.onActivityResult(req,result,data);
         if(req==OVERLAY_REQUEST&&Settings.canDrawOverlays(this))startAnnu();
         if(result==RESULT_OK&&data!=null&&data.getData()!=null&&(req==VRM_PICK||req==AUDIO_PICK)){
