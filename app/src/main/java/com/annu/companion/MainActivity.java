@@ -150,7 +150,8 @@ public class MainActivity extends Activity {
         if(c.contains("so ja")||c.contains("sleep")){animate("SLEEP","Good night Boss.");return;}
         if(c.contains("wake")||c.contains("uth ja")||c.contains("jaag")){animate("WAKE","Ji Boss, main jag gayi!");return;}
         if(c.contains("kya yaad")||c.contains("what do you remember")||c.contains("mera note")||c.contains("note bata")){String note=appPrefs.getString("user_note","");say(note.isEmpty()?"Boss, abhi koi private note save nahi hai.":"Boss, aapka saved note: "+note);return;}
-        if(c.contains("play audio")||c.contains("voice sample")||c.contains("audio chala")||c.contains("audio sun")){playImportedAudio();return;}\n        if(c.contains("call ka message")){say("Boss, abhi call message history available nahi hai.");return;}
+        if(c.contains("play audio")||c.contains("voice sample")||c.contains("audio chala")||c.contains("audio sun")){playImportedAudio();return;}
+        if(c.contains("call ka message")){say("Boss, abhi call message history available nahi hai.");return;}
         if(c.contains("hello")||c.contains("hi")||c.contains("namaste")||c.contains("नमस्ते")||c.contains("annu")){say("Ji Boss! Main yahan hoon. Bataiye kya karna hai?");return;}
         if(c.contains("stop")||c.contains("band ho ja")){appPrefs.edit().putBoolean("floating_enabled",false).apply();stopService(new Intent(this,FloatingService.class));say("Theek hai Boss, floating mode band kar rahi hoon.");return;}
         BrainClient.ask(this,c,(answer,error)->{if(answer!=null)say(answer);else say("Boss, AI se jawab nahi mila. "+error);});
