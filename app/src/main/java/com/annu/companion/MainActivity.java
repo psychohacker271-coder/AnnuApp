@@ -31,7 +31,7 @@ import java.util.Date;
 import java.util.Locale;
 
 public class MainActivity extends Activity {
-    private static final int OVERLAY_REQUEST=701, SPEECH_REQUEST=703, PERMISSION_REQUEST=704, VRM_PICK=705, AUDIO_PICK=706;
+    private static final int OVERLAY_REQUEST=701, SPEECH_REQUEST=703, PERMISSION_REQUEST=704, VRM_PICK=705, AUDIO_PICK=706, CALL_PERMISSION_REQUEST=707;
     private TextView status, assetStatus;
     private android.content.SharedPreferences appPrefs;
     private TextToSpeech tts;
@@ -57,6 +57,7 @@ public class MainActivity extends Activity {
         Button language=new Button(this);language.setText(appPrefs.getString("speech_language","hi-IN").equals("hi-IN")?"VOICE LANGUAGE: HINDI":"VOICE LANGUAGE: ENGLISH");language.setOnClickListener(v->{String next=appPrefs.getString("speech_language","hi-IN").equals("hi-IN")?"en-IN":"hi-IN";appPrefs.edit().putString("speech_language",next).apply();if(tts!=null)tts.setLanguage(next.equals("hi-IN")?new Locale("hi","IN"):new Locale("en","IN"));language.setText(next.equals("hi-IN")?"VOICE LANGUAGE: HINDI":"VOICE LANGUAGE: ENGLISH");say(next.equals("hi-IN")?"Hindi voice select ho gayi.":"English voice selected.");});root.addView(language);
         Button vrm=new Button(this);vrm.setText("IMPORT / CHANGE VRM MODEL");vrm.setOnClickListener(v->pickVrm());root.addView(vrm);
         Button audio=new Button(this);audio.setText("IMPORT VOICE / AUDIO FILE");audio.setOnClickListener(v->pickAudio());root.addView(audio);
+        Button calls=new Button(this);calls.setText("ENABLE INCOMING CALL ALERTS (OPTIONAL)");calls.setOnClickListener(v->enableCallAlerts());root.addView(calls);
         Button stop=new Button(this);stop.setText("STOP FLOATING ANNU");stop.setOnClickListener(v->{appPrefs.edit().putBoolean("floating_enabled",false).apply();stopService(new Intent(this,FloatingService.class));});root.addView(stop);
         Button smaller=new Button(this);smaller.setText("MAKE ANNU SMALLER");smaller.setOnClickListener(v->overlayAction("SIZE_SMALL"));root.addView(smaller);
         Button larger=new Button(this);larger.setText("MAKE ANNU LARGER");larger.setOnClickListener(v->overlayAction("SIZE_LARGE"));root.addView(larger);
@@ -77,7 +78,6 @@ public class MainActivity extends Activity {
     private void startAnnu(){
         if(!Settings.canDrawOverlays(this)){startActivityForResult(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,Uri.parse("package:"+getPackageName())),OVERLAY_REQUEST);return;}
         if(Build.VERSION.SDK_INT>=33&&checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED){requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},PERMISSION_REQUEST);return;}
-        if(checkSelfPermission(Manifest.permission.READ_PHONE_STATE)!=PackageManager.PERMISSION_GRANTED){requestPermissions(new String[]{Manifest.permission.READ_PHONE_STATE},PERMISSION_REQUEST);return;}
         appPrefs.edit().putBoolean("floating_enabled",true).apply();Intent service=new Intent(this,FloatingService.class);if(Build.VERSION.SDK_INT>=26)startForegroundService(service);else startService(service);say("Ji Boss! Floating mode shuru kar diya hai.");
     }
     private void overlayAction(String action){if(!appPrefs.getBoolean("floating_enabled",false)){say("Boss, pehle floating ANNU start kijiye.");return;}Intent i=new Intent(this,FloatingService.class).setAction(action);startService(i);say("Ji Boss, setting update kar di.");}
@@ -90,7 +90,8 @@ public class MainActivity extends Activity {
         }
         if(req==SPEECH_REQUEST&&result==RESULT_OK&&data!=null){ArrayList<String>a=data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);if(a!=null&&!a.isEmpty())handleCommand(a.get(0).toLowerCase(Locale.ROOT));}
     }
-    @Override public void onRequestPermissionsResult(int request,String[] permissions,int[] results){super.onRequestPermissionsResult(request,permissions,results);if(request==PERMISSION_REQUEST){boolean ok=true;for(int r:results)if(r!=PackageManager.PERMISSION_GRANTED)ok=false;if(ok)startAnnu();else say("Boss, permission allow karni hogi.");}}
+    @Override public void onRequestPermissionsResult(int request,String[] permissions,int[] results){super.onRequestPermissionsResult(request,permissions,results);if(request==CALL_PERMISSION_REQUEST){say(results.length>0&&results[0]==PackageManager.PERMISSION_GRANTED?"Boss, incoming call alerts enable ho gaye.":"Boss, call alerts ke liye phone permission nahi mili.");return;}if(request==PERMISSION_REQUEST){boolean ok=true;for(int r:results)if(r!=PackageManager.PERMISSION_GRANTED)ok=false;if(ok)startAnnu();else say("Boss, floating mode ke liye notification permission allow karein.");}}
+    private void enableCallAlerts(){if(checkSelfPermission(Manifest.permission.READ_PHONE_STATE)==PackageManager.PERMISSION_GRANTED){say("Boss, incoming call alerts already enabled hain.");return;}requestPermissions(new String[]{Manifest.permission.READ_PHONE_STATE},CALL_PERMISSION_REQUEST);}
     private void handleCommand(String c){
         if(c.contains("settings")||c.contains("सेटिंग")){say("Boss, settings khol rahi hoon.");startActivity(new Intent(Settings.ACTION_SETTINGS));return;}
         if(c.contains("camera")||c.contains("कैमरा")){launchIntent(new Intent("android.media.action.IMAGE_CAPTURE"),"Camera khol rahi hoon.");return;}
