@@ -146,6 +146,12 @@ public class MainActivity extends Activity {
         if(c.contains("battery")||c.contains("बैटरी")){Intent b=registerReceiver(null,new android.content.IntentFilter(Intent.ACTION_BATTERY_CHANGED));if(b!=null){int level=b.getIntExtra("level",-1),scale=b.getIntExtra("scale",100);say(level>=0?"Boss, battery "+(level*100/Math.max(scale,1))+" percent hai.":"Boss, battery status nahi mil paaya.");}else say("Boss, battery status nahi mil paaya.");return;}
         if(c.contains("date")||c.contains("tarikh")||c.contains("तारीख")){say("Boss, aaj "+new SimpleDateFormat("EEEE, d MMMM yyyy",Locale.getDefault()).format(new Date())+" hai.");return;}
         if(c.contains("dance")){animate("DANCE","Ji Boss, dance mode!");return;}
+        if(c.contains("walk")||c.contains("चल")||c.contains("चलो")){animate("WALK","Boss, walking animation shuru!");return;}
+        if(c.contains("sit")||c.contains("बैठ")||c.contains("baith")){animate("SIT","Ji Boss, sitting pose!");return;}
+        if(c.contains("nod")||c.contains("haan mein")||c.contains("सिर हिला")){animate("NOD","Ji Boss!");return;}
+        if(c.contains("think")||c.contains("सोच")||c.contains("soch")){animate("THINK","Hmm Boss, main soch rahi hoon.");return;}
+        if(c.contains("happy")||c.contains("खुश")||c.contains("khush")){animate("HAPPY","Yay Boss! 💜");return;}
+
         if(c.contains("wave")||c.contains("haath hila")){animate("WAVE","Boss, hello!");return;}
         if(c.contains("so ja")||c.contains("sleep")){animate("SLEEP","Good night Boss.");return;}
         if(c.contains("wake")||c.contains("uth ja")||c.contains("jaag")){animate("WAKE","Ji Boss, main jag gayi!");return;}
