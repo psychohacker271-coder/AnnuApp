@@ -26,7 +26,7 @@ try{
  document.body.appendChild(renderer.domElement);
  scene.add(new THREE.HemisphereLight(0xffffff,0x665577,2));
  const light=new THREE.DirectionalLight(0xffffff,2);light.position.set(1,2,3);scene.add(light);
- let vrm=null,head=null,chest=null,leftArm=null,rightArm=null,leftLeg=null,rightLeg=null,hips=null,blinkTimer=0,blinkValue=0,blinkPhase=0,action='idle',actionStarted=0;
+ let vrm=null,head=null,chest=null,leftArm=null,rightArm=null,leftLeg=null,rightLeg=null,hips=null,blinkTimer=0,blinkValue=0,blinkPhase=0,action='idle',actionStarted=0,speaking=false;
  const loader=new GLTFLoader();loader.register(parser=>new VRMLoaderPlugin(parser));
  msg.textContent='ANNU ka model load ho raha hai…';
  loader.load('../model/annu.vrm',gltf=>{
@@ -47,6 +47,7 @@ try{
    try{head=vrm.humanoid?.getNormalizedBoneNode('head');chest=vrm.humanoid?.getNormalizedBoneNode('chest');leftArm=vrm.humanoid?.getNormalizedBoneNode('leftUpperArm');rightArm=vrm.humanoid?.getNormalizedBoneNode('rightUpperArm');leftLeg=vrm.humanoid?.getNormalizedBoneNode('leftUpperLeg');rightLeg=vrm.humanoid?.getNormalizedBoneNode('rightUpperLeg');hips=vrm.humanoid?.getNormalizedBoneNode('hips');}catch(e){}
    msg.textContent='Ji Boss! Main yahan hoon 💜';
  },p=>{if(p.total)msg.textContent='Model '+Math.round(p.loaded/p.total*100)+'%…'},fail);
+ window.annuSpeak=function(active){speaking=!!active;};
  window.annuAction=function(next){const requested=String(next||'idle');action=requested==='wake'?'idle':requested;if(requested==='wake'){blinkValue=0;blinkPhase=0;try{vrm?.expressionManager?.setValue('blink',0);}catch(e){}}actionStarted=performance.now()*.001;msg.textContent=requested==='sleep'?'Good night Boss 🌙':requested==='wake'?'Ji Boss, main jag gayi! 💜':'Ji Boss! 💜';};
  function resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)}
  addEventListener('resize',resize);
@@ -66,7 +67,7 @@ try{
      if(hips){hips.position.y=action==='dance'?.02+Math.abs(Math.sin(t*5))*.025:0;}
      if(action==='sleep'){blinkValue=1;blinkPhase=0;}
      else{blinkTimer+=dt;if(blinkPhase===0&&blinkTimer>3.2+Math.random()*2.8){blinkPhase=1;blinkTimer=0;}if(blinkPhase===1){blinkValue=Math.min(1,blinkValue+dt*12);if(blinkValue>=1)blinkPhase=2;}else if(blinkPhase===2){blinkValue=Math.max(0,blinkValue-dt*9);if(blinkValue<=0)blinkPhase=0;}}
-     try{vrm.expressionManager?.setValue('blink',blinkValue);vrm.expressionManager?.setValue('aa',action==='talk'?Math.max(0,Math.sin(t*11))*.22:0);}catch(e){}
+     try{vrm.expressionManager?.setValue('blink',blinkValue);vrm.expressionManager?.setValue('aa',speaking?Math.max(0,Math.sin(t*11))*.22:0);}catch(e){}
    }
    renderer.render(scene,camera);
  }
