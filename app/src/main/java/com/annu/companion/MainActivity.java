@@ -129,7 +129,7 @@ public class MainActivity extends Activity {
         startWakeWord();
     }
     private void startWakeWord(){
-        if(Build.VERSION.SDK_INT>=33&&checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED){say("Boss, pehle notification permission allow karein.");requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},PERMISSION_REQUEST);return;}
+        if(Build.VERSION.SDK_INT>=33&&checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED){say("Boss, pehle notification permission allow karein.");requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},WAKE_NOTIFICATION_REQUEST);return;}
         Intent i=new Intent(this,WakeWordService.class).putExtra("language",appPrefs.getString("speech_language","hi-IN"));
         if(Build.VERSION.SDK_INT>=26)startForegroundService(i);else startService(i);
         say("Boss, Hey ANNU wake listening start ho gayi. Notification se kabhi bhi band kar sakte hain.");
