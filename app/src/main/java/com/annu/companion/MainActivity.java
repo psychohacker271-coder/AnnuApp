@@ -74,9 +74,14 @@ public class MainActivity extends Activity {
         setContentView(root);
         character.loadUrl("https://appassets.androidplatform.net/assets/annu.html");
         if(getIntent().getBooleanExtra("annu_incoming_call",false)){say("Boss, aapko call aa rahi hai. Kya aap baat karna chahenge?");getIntent().removeExtra("annu_incoming_call");}
-        if(getIntent().getBooleanExtra("annu_wake",false)){getIntent().removeExtra("annu_wake");status.postDelayed(()->{say("Ji Boss, main sun rahi hoon.");listen();},700);}\n        if(getIntent().getBooleanExtra("annu_voice_assist",false)){getIntent().removeExtra("annu_voice_assist");status.postDelayed(()->{say("Ji Boss, ANNU sun rahi hai.");listen();},700);}
+        if(getIntent().getBooleanExtra("annu_wake",false)){getIntent().removeExtra("annu_wake");status.postDelayed(()->{say("Ji Boss, main sun rahi hoon.");listen();},700);}
+        if(getIntent().getBooleanExtra("annu_voice_assist",false)){getIntent().removeExtra("annu_voice_assist");status.postDelayed(()->{say("Ji Boss, ANNU sun rahi hai.");listen();},700);}
     }
-    private void requestAssistantRole(){\n        if(Build.VERSION.SDK_INT>=29){RoleManager rm=getSystemService(RoleManager.class);if(rm!=null&&rm.isRoleAvailable(RoleManager.ROLE_ASSISTANT)){if(rm.isRoleHeld(RoleManager.ROLE_ASSISTANT)){say("Boss, ANNU already default assistant hai.");return;}startActivityForResult(rm.createRequestRoleIntent(RoleManager.ROLE_ASSISTANT),711);return;}}\n        say("Boss, is Android version par default assistant selection available nahi hai.");\n    }\n    private void stopImportedAudio(){if(importedPlayer!=null){try{importedPlayer.stop();}catch(Exception ignored){}importedPlayer.release();importedPlayer=null;}if(status!=null)status.setText("Audio sample stopped.");}
+    private void requestAssistantRole(){
+        if(Build.VERSION.SDK_INT>=29){RoleManager rm=getSystemService(RoleManager.class);if(rm!=null&&rm.isRoleAvailable(RoleManager.ROLE_ASSISTANT)){if(rm.isRoleHeld(RoleManager.ROLE_ASSISTANT)){say("Boss, ANNU already default assistant hai.");return;}startActivityForResult(rm.createRequestRoleIntent(RoleManager.ROLE_ASSISTANT),711);return;}}
+        say("Boss, is Android version par default assistant selection available nahi hai.");
+    }
+    private void stopImportedAudio(){if(importedPlayer!=null){try{importedPlayer.stop();}catch(Exception ignored){}importedPlayer.release();importedPlayer=null;}if(status!=null)status.setText("Audio sample stopped.");}
     private void playImportedAudio(){
         String path=appPrefs.getString("latest_audio_path","");
         if(path.isEmpty()||!new File(path).isFile()){say("Boss, pehle audio file import kijiye.");return;}
