@@ -3,78 +3,79 @@
 <style>
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}
 canvas{display:block;width:100%;height:100%;touch-action:none}
-#msg{position:absolute;left:4px;right:4px;bottom:8px;text-align:center;color:#fff;font:12px sans-serif;text-shadow:0 1px 4px #000;pointer-events:none}
+#msg{position:absolute;left:4px;right:4px;bottom:8px;text-align:center;color:#fff;font:13px sans-serif;text-shadow:0 1px 4px #000;pointer-events:none;z-index:5}
 </style>
 <script type="importmap">{"imports":{"three":"/assets/vendor/three.module.js","three/addons/":"/assets/vendor/","@pixiv/three-vrm":"/assets/vendor/three-vrm.module.min.js"}}</script>
-</head><body><div id="msg">ANNU 💜 — 3D load ho raha hai…</div>
-<script type="module">
-import * as THREE from 'three';
-import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-import {VRMLoaderPlugin} from '@pixiv/three-vrm';
-const msg=document.getElementById('msg');
-const fail=e=>{console.error(e);msg.textContent='3D error: '+(e?.message||String(e)).slice(0,90)};
-window.addEventListener('error',e=>fail(e.message||'JavaScript error'));
-window.addEventListener('unhandledrejection',e=>fail(e.reason));
-try{
- const scene=new THREE.Scene();
- const camera=new THREE.PerspectiveCamera(32,innerWidth/innerHeight,.05,100);
- const renderer=new THREE.WebGLRenderer({alpha:true,antialias:true,powerPreference:'low-power'});
- renderer.setPixelRatio(Math.min(devicePixelRatio,1.25));
- renderer.setSize(innerWidth,innerHeight);
- renderer.outputColorSpace=THREE.SRGBColorSpace;
- renderer.setClearColor(0,0);
- document.body.appendChild(renderer.domElement);
- scene.add(new THREE.HemisphereLight(0xffffff,0x665577,2));
- const light=new THREE.DirectionalLight(0xffffff,2);light.position.set(1,2,3);scene.add(light);
- let vrm=null,head=null,chest=null,leftArm=null,rightArm=null,leftLeg=null,rightLeg=null,hips=null,blinkTimer=0,blinkValue=0,blinkPhase=0,action='idle',actionStarted=0,speaking=false;
- const loader=new GLTFLoader();loader.register(parser=>new VRMLoaderPlugin(parser));
- msg.textContent='ANNU ka model load ho raha hai…';
- loader.load('../model/annu.vrm',gltf=>{
+</head><body><div id="msg">ANNU 💜 — 3D engine start ho raha hai…</div>
+<script>
+(async function(){
+ const msg=document.getElementById('msg');
+ const showError=e=>{const m=e&&e.message?e.message:String(e||'Unknown error');console.error('ANNU 3D:',e);msg.textContent='3D ERROR: '+m.slice(0,130);};
+ try{
+   msg.textContent='3D engine load ho raha hai…';
+   const [THREE,GLTFModule,VRMModule]=await Promise.all([
+     import('three'),import('three/addons/loaders/GLTFLoader.js'),import('@pixiv/three-vrm')
+   ]);
+   const GLTFLoader=GLTFModule.GLTFLoader,VRMLoaderPlugin=VRMModule.VRMLoaderPlugin;
+   if(!THREE||!GLTFLoader||!VRMLoaderPlugin)throw new Error('3D library export missing');
+   const scene=new THREE.Scene();
+   const camera=new THREE.PerspectiveCamera(32,innerWidth/innerHeight,.01,1000);
+   const renderer=new THREE.WebGLRenderer({alpha:true,antialias:false,powerPreference:'low-power'});
+   renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.25));renderer.setSize(innerWidth,innerHeight);
+   renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.setClearColor(0,0);
+   document.body.appendChild(renderer.domElement);
+   scene.add(new THREE.HemisphereLight(0xffffff,0x665577,2));
+   const light=new THREE.DirectionalLight(0xffffff,2);light.position.set(1,2,3);scene.add(light);
+   let vrm=null,head=null,chest=null,leftArm=null,rightArm=null,leftLeg=null,rightLeg=null,hips=null;
+   let blinkTimer=0,blinkValue=0,blinkPhase=0,action='idle',speaking=false;
+   const loader=new GLTFLoader();loader.register(parser=>new VRMLoaderPlugin(parser));
+   msg.textContent='ANNU ka VRM model check ho raha hai…';
+   const modelUrl='/model/annu.vrm';
+   const response=await fetch(modelUrl,{method:'GET',cache:'no-store'});
+   if(!response.ok)throw new Error('VRM file nahi mili (HTTP '+response.status+'). Model dobara import karein.');
+   const bytes=await response.arrayBuffer();
+   if(bytes.byteLength<1000)throw new Error('VRM file khaali ya incomplete hai.');
+   const magic=String.fromCharCode(...new Uint8Array(bytes,0,4));
+   if(magic!=='glTF')throw new Error('Selected file valid VRM/GLB nahi lagti.');
+   msg.textContent='ANNU model load ho raha hai…';
+   const gltf=await new Promise((resolve,reject)=>loader.parse(bytes,'',resolve,reject));
    vrm=gltf.userData.vrm;
-   if(!vrm){fail('VRM model unsupported');return;}
+   if(!vrm)throw new Error('File load hui, lekin valid VRM avatar nahi mila.');
    scene.add(vrm.scene);
    const box=new THREE.Box3().setFromObject(vrm.scene);
    const size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3());
-   vrm.scene.position.set(-center.x,-box.min.y,-center.z);
-   // VRM avatars commonly face the opposite direction from a +Z WebGL camera.
-   vrm.scene.rotation.y=Math.PI;
-   const h=Math.max(size.y,1.2);
-   const visibleHeight=h*1.08;
-   const d=(visibleHeight*.5)/Math.tan(THREE.MathUtils.degToRad(camera.fov*.5));
-   camera.position.set(0,h*.52,d*1.12);
-   camera.lookAt(0,h*.49,0);
-   vrm.scene.traverse(o=>o.frustumCulled=false);
-   try{head=vrm.humanoid?.getNormalizedBoneNode('head');chest=vrm.humanoid?.getNormalizedBoneNode('chest');leftArm=vrm.humanoid?.getNormalizedBoneNode('leftUpperArm');rightArm=vrm.humanoid?.getNormalizedBoneNode('rightUpperArm');leftLeg=vrm.humanoid?.getNormalizedBoneNode('leftUpperLeg');rightLeg=vrm.humanoid?.getNormalizedBoneNode('rightUpperLeg');hips=vrm.humanoid?.getNormalizedBoneNode('hips');}catch(e){}
-   msg.textContent='Ji Boss! Main yahan hoon 💜';
- },p=>{if(p.total)msg.textContent='Model '+Math.round(p.loaded/p.total*100)+'%…'},fail);
- window.annuSpeak=function(active){speaking=!!active;};
- window.annuAction=function(next){const requested=String(next||'idle');action=requested==='wake'?'idle':requested;if(requested==='wake'){blinkValue=0;blinkPhase=0;try{vrm?.expressionManager?.setValue('blink',0);}catch(e){}}actionStarted=performance.now()*.001;msg.textContent=requested==='sleep'?'Good night Boss 🌙':requested==='wake'?'Ji Boss, main jag gayi! 💜':'Ji Boss! 💜';};
- function resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)}
- addEventListener('resize',resize);
- const clock=new THREE.Clock();
- function animate(){
-   requestAnimationFrame(animate);
-   const dt=Math.min(clock.getDelta(),.05),t=performance.now()*.001;
-   if(vrm){
-     vrm.update(dt);
-     // Lightweight idle, wave, dance, sleep and talk gestures.
-     const walking=action==='walk', dancing=action==='dance', sitting=action==='sit', thinking=action==='think', happy=action==='happy';
-     if(head){
-       head.rotation.y=Math.sin(t*.65)*.035+(thinking?.22:0);
-       head.rotation.x=action==='sleep'?.30:sitting?-.08:action==='nod'?Math.sin(t*4)*.22:thinking?-.16:Math.sin(t*.9)*.012+(dancing?Math.sin(t*4)*.08:0);
+   if(!Number.isFinite(size.y)||size.y<=0)throw new Error('Avatar ka size read nahi ho paaya.');
+   vrm.scene.position.set(-center.x,-box.min.y,-center.z);vrm.scene.rotation.y=Math.PI;
+   const h=Math.max(size.y,1);
+   const distance=(h*.58)/Math.tan(THREE.MathUtils.degToRad(camera.fov*.5));
+   camera.position.set(0,h*.53,distance*1.18);camera.lookAt(0,h*.5,0);
+   vrm.scene.traverse(o=>{o.frustumCulled=false;});
+   try{head=vrm.humanoid?.getNormalizedBoneNode('head');chest=vrm.humanoid?.getNormalizedBoneNode('chest');leftArm=vrm.humanoid?.getNormalizedBoneNode('leftUpperArm');rightArm=vrm.humanoid?.getNormalizedBoneNode('rightUpperArm');leftLeg=vrm.humanoid?.getNormalizedBoneNode('leftUpperLeg');rightLeg=vrm.humanoid?.getNormalizedBoneNode('rightUpperLeg');hips=vrm.humanoid?.getNormalizedBoneNode('hips');}catch(e){console.warn(e);}
+   msg.textContent='ANNU ready hai 💜';
+   window.annuSpeak=active=>{speaking=!!active;};
+   window.annuAction=next=>{const requested=String(next||'idle');action=requested==='wake'?'idle':requested;if(requested==='wake'){blinkValue=0;blinkPhase=0;try{vrm?.expressionManager?.setValue('blink',0);}catch(e){}}msg.textContent=requested==='sleep'?'Good night Boss 🌙':'ANNU 💜';};
+   function resize(){camera.aspect=innerWidth/Math.max(innerHeight,1);camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);}
+   addEventListener('resize',resize);
+   const clock=new THREE.Clock();
+   function animate(){
+     requestAnimationFrame(animate);
+     const dt=Math.min(clock.getDelta(),.05),t=performance.now()*.001;
+     if(vrm){
+       vrm.update(dt);
+       const walking=action==='walk',dancing=action==='dance',sitting=action==='sit',thinking=action==='think',happy=action==='happy';
+       if(head){head.rotation.y=Math.sin(t*.65)*.035+(thinking?.22:0);head.rotation.x=action==='sleep'?.30:sitting?-.08:action==='nod'?Math.sin(t*4)*.22:thinking?-.16:Math.sin(t*.9)*.012+(dancing?Math.sin(t*4)*.08:0);}
+       if(chest)chest.rotation.x=action==='sleep'?.10:sitting?-.12:Math.sin(t*1.15)*.008+(dancing?Math.sin(t*5)*.045:0);
+       if(leftArm)leftArm.rotation.z=action==='wave'?.75+Math.sin(t*7)*.28:dancing?.55+Math.sin(t*5)*.28:walking?Math.sin(t*5)*.32:happy?.9:0;
+       if(rightArm)rightArm.rotation.z=dancing?-.55+Math.sin(t*5+1)*.28:walking?-.32*Math.sin(t*5):thinking?-1.05:happy?-.9:0;
+       if(leftLeg)leftLeg.rotation.x=sitting?-1.05:walking?Math.sin(t*5)*.36:dancing?Math.sin(t*5)*.20:0;
+       if(rightLeg)rightLeg.rotation.x=sitting?-1.05:walking?Math.sin(t*5+Math.PI)*.36:dancing?Math.sin(t*5+Math.PI)*.20:0;
+       if(hips)hips.position.y=dancing?.02+Math.abs(Math.sin(t*5))*.025:walking?Math.abs(Math.sin(t*5))*.018:0;
+       if(action==='sleep'){blinkValue=1;blinkPhase=0;}else{blinkTimer+=dt;if(blinkPhase===0&&blinkTimer>3.2+Math.random()*2.8){blinkPhase=1;blinkTimer=0;}if(blinkPhase===1){blinkValue=Math.min(1,blinkValue+dt*12);if(blinkValue>=1)blinkPhase=2;}else if(blinkPhase===2){blinkValue=Math.max(0,blinkValue-dt*9);if(blinkValue<=0)blinkPhase=0;}}
+       try{vrm.expressionManager?.setValue('blink',blinkValue);vrm.expressionManager?.setValue('aa',speaking?Math.max(0,Math.sin(t*11))*.22:0);}catch(e){}
      }
-     if(chest){chest.rotation.x=action==='sleep'?.10:sitting?-.12:Math.sin(t*1.15)*.008+(dancing?Math.sin(t*5)*.045:0);}
-     if(leftArm){leftArm.rotation.z=action==='wave'?.75+Math.sin(t*7)*.28:dancing?.55+Math.sin(t*5)*.28:walking?Math.sin(t*5)*.32:happy?.9:0;}
-     if(rightArm){rightArm.rotation.z=dancing?-.55+Math.sin(t*5+1)*.28:walking?-.32*Math.sin(t*5):thinking?-1.05:happy?-.9:0;}
-     if(leftLeg){leftLeg.rotation.x=sitting?-1.05:walking?Math.sin(t*5)*.36:dancing?Math.sin(t*5)*.20:0;}
-     if(rightLeg){rightLeg.rotation.x=sitting?-1.05:walking?Math.sin(t*5+Math.PI)*.36:dancing?Math.sin(t*5+Math.PI)*.20:0;}
-     if(hips){hips.position.y=dancing?.02+Math.abs(Math.sin(t*5))*.025:walking?Math.abs(Math.sin(t*5))*.018:0;}
-     if(action==='sleep'){blinkValue=1;blinkPhase=0;}
-     else{blinkTimer+=dt;if(blinkPhase===0&&blinkTimer>3.2+Math.random()*2.8){blinkPhase=1;blinkTimer=0;}if(blinkPhase===1){blinkValue=Math.min(1,blinkValue+dt*12);if(blinkValue>=1)blinkPhase=2;}else if(blinkPhase===2){blinkValue=Math.max(0,blinkValue-dt*9);if(blinkValue<=0)blinkPhase=0;}}
-     try{vrm.expressionManager?.setValue('blink',blinkValue);vrm.expressionManager?.setValue('aa',speaking?Math.max(0,Math.sin(t*11))*.22:0);}catch(e){}
+     renderer.render(scene,camera);
    }
-   renderer.render(scene,camera);
- }
- animate();
-}catch(e){fail(e)}
+   animate();
+ }catch(e){showError(e);}
+})();
 </script></body></html>
